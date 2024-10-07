@@ -176,30 +176,17 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
-      # Step 14: Slack notification if the PR build fails or there is a conflict
-      - name: Send Slack Notification to PR Author
-        if: ${{ github.event_name == 'pull_request' && (failure() || github.event.pull_request.merged == false) }}
-        env:
-          SLACK_MAPPING: '${{ secrets.SLACK_MAPPING }}'
-          SLACK_OAUTH_TOKEN: '${{ secrets.SLACK_OAUTH_TOKEN }}'
+      - name: Run Slack notification script
+        if: "${{ github.event_name != 'pull_request' && failure() }}"
         run: |
-          echo "Start Slack notification debug..."
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          echo "PR Author: $PR_AUTHOR"
-          echo "Slack Mapping: $SLACK_MAPPING"
-          echo "Slack token: $SLACK_OAUTH_TOKEN" 
-          SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
-          echo "Slack user mapped to PR Author: $SLACK_AUTHOR"    
-          if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
-            echo "Slack mapping not found for $PR_AUTHOR; exiting"
-            exit 1
-          fi
-          echo "Sending Slack notification to: @$SLACK_AUTHOR"
-          curl -v -X POST -H "Authorization: Bearer $SLACK_OAUTH_TOKEN" \
-            -H 'Content-type: application/json' \
-            --data "{
-              \"channel\": \"@$SLACK_AUTHOR\",
-              \"text\": \"Build failure/conflict for $PR_AUTHOR: please check your PR\"
-            }" https://slack.com/api/chat.postMessage  
-          echo "Slack notification sent successfully!"
+          ./test.sh "$PR_AUTHOR" "$REPO" "$COMMIT" "$MESSAGE" "$STATUS" "$WORKFLOW" "$JOB_NAME" "$SLACK_MAPPING" "$SLACK_OAUTH_TOKEN"
+        env:
+          PR_AUTHOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          STATUS: ${{ job.status }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB_NAME: ${{ github.job }}
+          SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}  # Secret for Slack mapping
 
