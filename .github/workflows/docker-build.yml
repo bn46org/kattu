@@ -180,9 +180,10 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && failure() }} || ${{ github.event.pull_request.merged == false }}
         run: |
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          # Print the Slack mapping for debugging
-          echo "Slack Mapping: $SLACK_MAPPING"        
-          SLACK_USER=$(echo '${{ secrets.SLACK_MAPPING }}' | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+          SLACK_MAPPING=${{ secrets.SLACK_MAPPING }}
+          echo "Slack Mapping: $SLACK_MAPPING"
+          SLACK_USER=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+          echo $SLACK_USER
 
           if [ -z "$SLACK_USER" ]; then
             echo "No Slack user mapping found for GitHub user $PR_AUTHOR."
