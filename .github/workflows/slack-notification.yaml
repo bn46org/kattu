@@ -1,0 +1,60 @@
+name: 'Reusable Slack Notification Workflow'
+
+on:
+  workflow_call:
+    inputs:
+      pr_author:
+        description: 'PR Author from GitHub event'
+        required: true
+        type: string
+      repo:
+        description: 'Repository name'
+        required: true
+        type: string
+      commit:
+        description: 'Commit SHA'
+        required: true
+        type: string
+      message:
+        description: 'Commit message'
+        required: true
+        type: string
+      status:
+        description: 'Job status (success, failure)'
+        required: true
+        type: string
+      workflow:
+        description: 'Workflow name'
+        required: true
+        type: string
+      job_name:
+        description: 'GitHub Job name'
+        required: true
+        type: string
+
+    secrets:
+      slack_mapping:
+        description: 'JSON Slack mapping of PR author to Slack user'
+      slack_oauth_token:
+        description: 'Slack OAuth token'
+
+jobs:
+  notify_slack:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 'Checkout repository'
+      uses: actions/checkout@v3
+
+    - name: 'Send Slack Notification'
+      uses: './.github/actions/slack-notification-action'  # Reference your custom action path
+      env:
+        PR_AUTHOR: ${{ inputs.pr_author }}
+        REPO: ${{ inputs.repo }}
+        COMMIT: ${{ inputs.commit }}
+        MESSAGE: ${{ inputs.message }}
+        STATUS: ${{ inputs.status }}
+        WORKFLOW: ${{ inputs.workflow }}
+        JOB_NAME: ${{ inputs.job_name }}
+        SLACK_MAPPING: ${{ secrets.slack_mapping }}  # Centralized secret
+        SLACK_OAUTH_TOKEN: ${{ secrets.slack_oauth_token }}  # Centralized secret
