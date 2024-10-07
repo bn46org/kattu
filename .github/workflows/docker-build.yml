@@ -180,8 +180,8 @@ jobs:
       - name: Send Slack Notification to PR Author
         if: ${{ github.event_name == 'pull_request' && (failure() || github.event.pull_request.merged == false) }}
         env:
-          SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}
-          SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+          SLACK_MAPPING: '${{ secrets.SLACK_MAPPING }}'
+          SLACK_OAUTH_TOKEN: '${{ secrets.SLACK_OAUTH_TOKEN }}'
         run: |
           echo "Start Slack notification debug..."
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
