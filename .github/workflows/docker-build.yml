@@ -35,6 +35,10 @@ on:
         required: true
       SLACK_WEBHOOK_URL:
         required: true
+      SLACK_OAUTH_TOKEN:
+        required: true
+      SLACK_MAPPING:
+        required: true
 
 jobs:
   build-dockers:
@@ -172,10 +176,24 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
-      - uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,author,commit,workflow,job # selectable (default: repo,message)
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
-        if: "${{ github.event_name != 'pull_request' && failure() }}" # Pick up events even if the job fails or is canceled.
+      - name: Send Slack Notification to PR Author
+        if: ${{ github.event_name == 'pull_request' && failure() }} || ${{ github.event.pull_request.merged == false }}
+        run: |
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          SLACK_USER=$(echo '${{ secrets.SLACK_MAPPING }}' | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+
+          if [ -z "$SLACK_USER" ]; then
+            echo "No Slack user mapping found for GitHub user $PR_AUTHOR."
+            exit 0
+          fi
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "channel": "'"$SLACK_USER"'",
+              "text": "PR build failed or there is a conflict for your PR. Please check the details: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
+              "username": "GitHub Action Bot",
+              "icon_emoji": ":x:"
+            }' \
+            https://slack.com/api/chat.postMessage
