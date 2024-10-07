@@ -186,7 +186,8 @@ jobs:
           echo "Start Slack notification debug..."
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           echo "PR Author: $PR_AUTHOR"
-          echo "Slack Mapping: $SLACK_MAPPING"     
+          echo "Slack Mapping: $SLACK_MAPPING"
+          echo "Slack token: $SLACK_OAUTH_TOKEN" 
           SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
           echo "Slack user mapped to PR Author: $SLACK_AUTHOR"    
           if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
