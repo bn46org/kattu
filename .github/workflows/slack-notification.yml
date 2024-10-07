@@ -47,7 +47,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: 'Send Slack Notification'
-      uses: './.github/actions/slack-notification-action'  # Reference your custom action path
+      uses: bhumi46/slack-notification-action@v1.0.1 # Reference your custom action path
       env:
         PR_AUTHOR: ${{ inputs.pr_author }}
         REPO: ${{ inputs.repo }}
