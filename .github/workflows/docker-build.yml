@@ -36,9 +36,9 @@ on:
       SLACK_WEBHOOK_URL:
         required: true
       SLACK_OAUTH_TOKEN:
-        required: false
+        required: true
       SLACK_MAPPING:
-        required: false
+        required: true
 
 jobs:
   build-dockers:
