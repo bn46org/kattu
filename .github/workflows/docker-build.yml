@@ -177,11 +177,13 @@ jobs:
           docker push $IMAGE_ID:$VERSION
 
       - name: Run Slack notification script
-        if: "${{ github.event_name != 'pull_request' && failure() }}"
+        if: ${{ always() }}
         run: |
+          pwd
+          chmod +x test.sh
           ./test.sh "$PR_AUTHOR" "$REPO" "$COMMIT" "$MESSAGE" "$STATUS" "$WORKFLOW" "$JOB_NAME" "$SLACK_MAPPING" "$SLACK_OAUTH_TOKEN"
         env:
-          PR_AUTHOR: ${{ github.actor }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           REPO: ${{ github.repository }}
           COMMIT: ${{ github.sha }}
           MESSAGE: ${{ github.event.head_commit.message }}
