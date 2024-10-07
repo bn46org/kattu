@@ -206,7 +206,7 @@ jobs:
           WORKFLOW: ${{ github.workflow }}
           JOB_NAME: ${{ matrix.SERVICE_NAME }}
         run: |
-          # Debugging information
+          sudo apt-get update && sudo apt-get install -y jq
           echo "Start Slack notification debug..."
           echo "PR Author: $PR_AUTHOR"
           echo "Repository: $REPO"
@@ -220,6 +220,11 @@ jobs:
           # Get the Slack user ID from the mapping using jq
           SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
           echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
+
+          # Get the Slack user ID from the mapping
+          SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+          echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
+
 
           if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
             echo "Slack mapping not found for $PR_AUTHOR; exiting"
