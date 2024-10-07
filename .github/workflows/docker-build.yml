@@ -176,27 +176,29 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
+      # Step 14: Slack notification if the PR build fails or there is a conflict
       - name: Send Slack Notification to PR Author
-        if: ${{ github.event_name == 'pull_request' && failure() }} || ${{ github.event.pull_request.merged == false }}
+        if: ${{ github.event_name == 'pull_request' && (failure() || github.event.pull_request.merged == false) }}
         run: |
+          echo "Start Slack notification debug..."
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          SLACK_MAPPING="${{ secrets.SLACK_MAPPING }}"
-          echo "Slack Mapping: $SLACK_MAPPING"
-          SLACK_USER=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
-          echo $SLACK_USER
+          echo "PR Author: $PR_AUTHOR"
 
-          if [ -z "$SLACK_USER" ]; then
-            echo "No Slack user mapping found for GitHub user $PR_AUTHOR."
-            exit 0
+          SLACK_AUTHOR=$(echo "${{ secrets.SLACK_MAPPING }}" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+          echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
+
+          if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
+            echo "Slack mapping not found for $PR_AUTHOR; exiting"
+            exit 1
           fi
 
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{
-              "channel": "'"$SLACK_USER"'",
-              "text": "PR build failed or there is a conflict for your PR. Please check the details: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}",
-              "username": "GitHub Action Bot",
-              "icon_emoji": ":x:"
-            }' \
-            https://slack.com/api/chat.postMessage
+          echo "Sending Slack notification to: @$SLACK_AUTHOR"
+          curl -v -X POST -H 'Authorization: Bearer ${{ secrets.SLACK_OAUTH_TOKEN }}' \
+            -H 'Content-type: application/json' \
+            --data "{
+              \"channel\": \"@$SLACK_AUTHOR\",
+              \"text\": \"Build failure/conflict for $PR_AUTHOR: please check your PR\"
+            }" https://slack.com/api/chat.postMessage
+
+          echo "Slack notification sent successfully!"
+
