@@ -198,16 +198,14 @@ jobs:
         env:
           SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}
           SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          STATUS: ${{ job.status }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB_NAME: ${{ matrix.SERVICE_NAME }}
         run: |
-          # Define environment variables
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          REPO="${{ github.repository }}"
-          COMMIT="${{ github.sha }}"
-          MESSAGE="${{ github.event.head_commit.message }}"
-          STATUS="Success"  # Or pass dynamically based on job status
-          WORKFLOW="${{ github.workflow }}"
-          JOB_NAME="${{ matrix.SERVICE_NAME }}"
-          
           # Debugging information
           echo "Start Slack notification debug..."
           echo "PR Author: $PR_AUTHOR"
