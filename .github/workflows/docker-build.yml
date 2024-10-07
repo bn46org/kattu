@@ -206,7 +206,7 @@ jobs:
           WORKFLOW: ${{ github.workflow }}
           JOB_NAME: ${{ matrix.SERVICE_NAME }}
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
+          sudo apt-get install -y curl jq
           echo "Start Slack notification debug..."
           echo "PR Author: $PR_AUTHOR"
           echo "Repository: $REPO"
