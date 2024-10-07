@@ -194,6 +194,7 @@ jobs:
 
       # Step to process Slack notification logic
       - name: Send Slack Notification
+        if: ${{ always() }}
         env:
           SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}
           SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
