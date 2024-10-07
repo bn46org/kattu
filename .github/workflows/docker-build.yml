@@ -37,7 +37,7 @@ on:
         required: true
       SLACK_OAUTH_TOKEN:
         required: true
-      SLACK_MAPPING:
+      SLACK_USER_MAPPING:
         required: true
 
 jobs:
@@ -265,4 +265,11 @@ jobs:
       #     slack_mapping: ${{ secrets.SLACK_MAPPING }}
       #     slack_oauth_token: ${{ secrets.SLACK_OAUTH_TOKEN }}
       #   if: "${{ github.event_name != 'pull_request' && failure() }}" 
+      - uses: bhumi46/actions-slack-notification@v2
+        with:
+          key: ${{ secrets.SLACK_OAUTH_TOKEN }}
+          slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: "${{ github.event_name != 'pull_request' && failure() }}" #
 
