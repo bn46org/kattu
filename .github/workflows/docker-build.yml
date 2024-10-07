@@ -193,61 +193,76 @@ jobs:
       #     SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}  # Secret for Slack mapping
 
       # Step to process Slack notification logic
+      # - name: Send Slack Notification
+      #   if: ${{ always() }}
+      #   env:
+      #     SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}
+      #     SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+      #     PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      #     REPO: ${{ github.repository }}
+      #     COMMIT: ${{ github.sha }}
+      #     MESSAGE: ${{ github.event.head_commit.message }}
+      #     STATUS: ${{ job.status }}
+      #     WORKFLOW: ${{ github.workflow }}
+      #     JOB_NAME: ${{ matrix.SERVICE_NAME }}
+      #   run: |
+      #     sudo apt-get install -y curl jq
+      #     echo "Start Slack notification debug..."
+      #     echo "PR Author: $PR_AUTHOR"
+      #     echo "Repository: $REPO"
+      #     echo "Commit SHA: $COMMIT"
+      #     echo "Commit Message: $MESSAGE"
+      #     echo "Build Status: $STATUS"
+      #     echo "Workflow: $WORKFLOW"
+      #     echo "Job Name: $JOB_NAME"
+      #     echo "Slack Mapping: $SLACK_MAPPING"
+
+      #     # Get the Slack user ID from the mapping using jq
+      #     SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+      #     echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
+
+      #     # Get the Slack user ID from the mapping
+      #     SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
+      #     echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
+
+
+      #     if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
+      #       echo "Slack mapping not found for $PR_AUTHOR; exiting"
+      #       exit 1
+      #     fi
+
+      #     # Create the message
+      #     slack_message="Build Status: *$STATUS*
+      #     Repository: *$REPO*
+      #     Commit: *$COMMIT*
+      #     Message: *$MESSAGE*
+      #     Author: *$PR_AUTHOR*
+      #     Workflow: *$WORKFLOW*
+      #     Job: *$JOB_NAME*"
+
+      #     # Send the message to Slack
+      #     echo "Sending Slack notification to: @$SLACK_AUTHOR"
+      #     curl -X POST -H "Authorization: Bearer $SLACK_OAUTH_TOKEN" \
+      #     -H 'Content-type: application/json' \
+      #     --data "{
+      #       \"channel\": \"@$SLACK_AUTHOR\",
+      #       \"text\": \"$slack_message\"
+      #     }" https://slack.com/api/chat.postMessage
+
+      #     echo "Slack notification sent successfully!"
+
+
       - name: Send Slack Notification
-        if: ${{ always() }}
-        env:
-          SLACK_MAPPING: ${{ secrets.SLACK_MAPPING }}
-          SLACK_OAUTH_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          REPO: ${{ github.repository }}
-          COMMIT: ${{ github.sha }}
-          MESSAGE: ${{ github.event.head_commit.message }}
-          STATUS: ${{ job.status }}
-          WORKFLOW: ${{ github.workflow }}
-          JOB_NAME: ${{ matrix.SERVICE_NAME }}
-        run: |
-          sudo apt-get install -y curl jq
-          echo "Start Slack notification debug..."
-          echo "PR Author: $PR_AUTHOR"
-          echo "Repository: $REPO"
-          echo "Commit SHA: $COMMIT"
-          echo "Commit Message: $MESSAGE"
-          echo "Build Status: $STATUS"
-          echo "Workflow: $WORKFLOW"
-          echo "Job Name: $JOB_NAME"
-          echo "Slack Mapping: $SLACK_MAPPING"
-
-          # Get the Slack user ID from the mapping using jq
-          SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
-          echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
-
-          # Get the Slack user ID from the mapping
-          SLACK_AUTHOR=$(echo "$SLACK_MAPPING" | jq -r --arg pr_author "$PR_AUTHOR" '.[$pr_author]')
-          echo "Slack user mapped to PR Author: $SLACK_AUTHOR"
-
-
-          if [[ -z "$SLACK_AUTHOR" || "$SLACK_AUTHOR" == "null" ]]; then
-            echo "Slack mapping not found for $PR_AUTHOR; exiting"
-            exit 1
-          fi
-
-          # Create the message
-          slack_message="Build Status: *$STATUS*
-          Repository: *$REPO*
-          Commit: *$COMMIT*
-          Message: *$MESSAGE*
-          Author: *$PR_AUTHOR*
-          Workflow: *$WORKFLOW*
-          Job: *$JOB_NAME*"
-
-          # Send the message to Slack
-          echo "Sending Slack notification to: @$SLACK_AUTHOR"
-          curl -X POST -H "Authorization: Bearer $SLACK_OAUTH_TOKEN" \
-          -H 'Content-type: application/json' \
-          --data "{
-            \"channel\": \"@$SLACK_AUTHOR\",
-            \"text\": \"$slack_message\"
-          }" https://slack.com/api/chat.postMessage
-
-          echo "Slack notification sent successfully!"
+        uses: bhumi46/slack-notification-action@v1.0.0
+        with:
+          pr_author: ${{ github.actor }}
+          repo: ${{ github.repository }}
+          commit: ${{ github.sha }}
+          message: ${{ github.event.head_commit.message }}
+          status: ${{ job.status }}
+          workflow: ${{ github.workflow }}
+          job_name: ${{ github.job }}
+          slack_mapping: ${{ secrets.SLACK_MAPPING }}
+          slack_oauth_token: ${{ secrets.SLACK_OAUTH_TOKEN }}
+        if: "${{ github.event_name != 'pull_request' && failure() }}" 
 
