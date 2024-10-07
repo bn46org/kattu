@@ -181,6 +181,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && (failure() || github.event.pull_request.merged == false) }}
         run: |
           echo "${{ secrets.SLACK_MAPPING }}"
+          echo "Slack OAuth Token: ${{ secrets.SLACK_OAUTH_TOKEN }}"
           echo "Start Slack notification debug..."
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           echo "PR Author: $PR_AUTHOR"
