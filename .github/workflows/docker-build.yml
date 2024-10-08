@@ -269,6 +269,7 @@ jobs:
         with:
           key: ${{ secrets.SLACK_OAUTH_TOKEN }}
           slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
+          fields: repo,message,author,commit,workflow,job
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
         if: "${{ github.event_name != 'pull_request' && failure() }}" #
