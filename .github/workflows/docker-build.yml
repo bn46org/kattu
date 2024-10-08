@@ -182,7 +182,7 @@ jobs:
           slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
           message: "Docker image **${{ env.SERVICE_NAME }}** has been built or failed in **${{ env.NAMESPACE }}**."
           fields: repo,message,author,commit,workflow,job
-        if: ${{ true }}
+        if: failure()
 
       # - uses: bhumi46/actions-slack-notification@v2
       #   with:
