@@ -175,6 +175,14 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+      - uses: bhumi46/actions-slack-notification@v2
+        with:
+          key: ${{ secrets.SLACK_OAUTH_TOKEN }}
+          slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
+          fields: repo,message,author,commit,workflow,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: "${{ github.event_name != 'pull_request' && failure() }}" #
 
       # - name: Run Slack notification script
       #   if: ${{ always() }}
@@ -265,12 +273,5 @@ jobs:
       #     slack_mapping: ${{ secrets.SLACK_MAPPING }}
       #     slack_oauth_token: ${{ secrets.SLACK_OAUTH_TOKEN }}
       #   if: "${{ github.event_name != 'pull_request' && failure() }}" 
-      - uses: bhumi46/actions-slack-notification@v2
-        with:
-          key: ${{ secrets.SLACK_OAUTH_TOKEN }}
-          slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
-          fields: repo,message,author,commit,workflow,job
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
-        if: "${{ github.event_name != 'pull_request' && failure() }}" #
+
 
