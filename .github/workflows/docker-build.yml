@@ -175,14 +175,22 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - uses: bhumi46/actions-slack-notification@v2
+      - name: Slack Notification
+        uses: bhumi46/actions-slack-notification@v2
         with:
           key: ${{ secrets.SLACK_OAUTH_TOKEN }}
           slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
+          message: "Docker image **${{ env.SERVICE_NAME }}** has been built or failed in **${{ env.NAMESPACE }}**."
           fields: repo,message,author,commit,workflow,job
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
-          if: github.event_name != 'pull_request' && ( job.status == 'success' || job.status == 'failure' )
+        if: always()
+      # - uses: bhumi46/actions-slack-notification@v2
+      #   with:
+      #     key: ${{ secrets.SLACK_OAUTH_TOKEN }}
+      #     slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
+      #     fields: repo,message,author,commit,workflow,job
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+      #     if: github.event_name != 'pull_request' && ( job.status == 'success' || job.status == 'failure' )
 
         # if: "${{ github.event_name != 'pull_request' && failure() }}" #
 
