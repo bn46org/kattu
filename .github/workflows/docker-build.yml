@@ -182,7 +182,9 @@ jobs:
           fields: repo,message,author,commit,workflow,job
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
-        if: "${{ github.event_name != 'pull_request' && failure() }}" #
+          if: github.event_name != 'pull_request' && ( job.status == 'success' || job.status == 'failure' )
+
+        # if: "${{ github.event_name != 'pull_request' && failure() }}" #
 
       # - name: Run Slack notification script
       #   if: ${{ always() }}
