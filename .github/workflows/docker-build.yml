@@ -194,16 +194,19 @@ jobs:
       - name: Decode Slack Users Secret
         id: slack_id
         run: |
+          # Access the JSON string from the secret
           SLACK_USERS_MAP="${{ secrets.SLACK_USERS_MAP }}"
+          # Debug: Print the JSON to ensure it's properly formatted
+          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
           GITHUB_USER="${{ inputs.GITHUB_USER }}"
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | grep -oP "$GITHUB_USER:\K[^,]+")
-          
+          echo $SLACK_USER_ID
           if [ -z "$SLACK_USER_ID" ]; then
             echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
             SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
           fi
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
-
+        shell: bash
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.27.0
         with:
