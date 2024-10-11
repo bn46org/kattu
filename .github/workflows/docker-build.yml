@@ -48,11 +48,11 @@ on:
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
       SLACK_BOT_TOKEN:
-        required: false
+        required: true
       GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
-        required: false
+        required: true
       SLACK_USERS_MAP:
-        required: false
+        required: true
 
 jobs:
   build-dockers:
