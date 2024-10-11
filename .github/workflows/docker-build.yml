@@ -25,7 +25,21 @@ on:
         required: false
         type: boolean
         default: false
-
+      GITHUB_USER:
+        required: true
+        type: string
+      PR_URL:
+        required: true
+        type: string
+      PR_TITLE:
+        required: true
+        type: string
+      REPOSITORY:
+        required: true
+        type: string
+      ACTION:
+        required: true
+        type: string
     secrets:
       RELEASE_DOCKER_HUB:
         required: true
@@ -33,11 +47,11 @@ on:
         required: true
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
-      SLACK_WEBHOOK_URL:
+      SLACK_BOT_TOKEN:
         required: true
-      SLACK_OAUTH_TOKEN:
+      GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
         required: true
-      SLACK_USER_MAPPING:
+      SLACK_USERS_MAP:
         required: true
 
 jobs:
@@ -175,14 +189,31 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - name: Slack Notification
-        uses: bhumi46/actions-slack-notification@v2
+      - name: Decode Slack Users Secret
+        id: slack_id
+        run: |
+          SLACK_USERS_MAP="${{ secrets.SLACK_USERS_MAP }}"
+          GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | grep -oP "$GITHUB_USER:\K[^,]+")
+          
+          if [ -z "$SLACK_USER_ID" ]; then
+            echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
+            SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+          fi
+          echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1.27.0
         with:
-          key: ${{ secrets.SLACK_OAUTH_TOKEN }}
-          slack_user_mapping: ${{ secrets.SLACK_USER_MAPPING }}
-          message: "Docker image **${{ env.SERVICE_NAME }}** has been built or failed in **${{ env.NAMESPACE }}**."
-          fields: repo,message,author,commit,workflow,job
-        if: failure()
+          channel-id: ${{ env.SLACK_USER_ID }}
+          slack-message: |
+            *PR Notification* :white_check_mark:
+            *Repository*: ${{ inputs.REPOSITORY }}
+            *Pull Request*: ${{ inputs.PR_TITLE }}
+            *Action*: ${{ inputs.ACTION }}
+            *PR URL*: ${{ inputs.PR_URL }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # - uses: bhumi46/actions-slack-notification@v2
       #   with:
