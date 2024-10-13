@@ -207,7 +207,7 @@ jobs:
           # Check if the Slack user ID was found
           if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
               echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              SLACK_USER_ID="{{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
           fi
           
           # Print the final Slack user ID and set it as an environment variable
