@@ -199,13 +199,19 @@ jobs:
           # Debug: Print the JSON to ensure it's properly formatted
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
           GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | grep -oP "$GITHUB_USER:\K[^,]+")
+          # Debug: Print the JSON to ensure it's properly formatted
+          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
+          # Use jq to extract the Slack user ID from the JSON
+          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
           echo $SLACK_USER_ID
-          if [ -z "$SLACK_USER_ID" ]; then
-            echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-            SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
-            echo $SLACK_USER_ID
+          # Check if the Slack user ID was found
+          if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
+              echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
+              SLACK_USER_ID="{{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
           fi
+          
+          # Print the final Slack user ID and set it as an environment variable
+          echo "SLACK_USER_ID=$SLACK_USER_ID"
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
         shell: bash
       - name: Notify Slack
