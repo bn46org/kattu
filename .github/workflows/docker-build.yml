@@ -204,6 +204,7 @@ jobs:
           if [ -z "$SLACK_USER_ID" ]; then
             echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
             SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+            echo $SLACK_USER_ID
           fi
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
         shell: bash
