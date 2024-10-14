@@ -192,7 +192,8 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
       - name: Decode Slack Users Secret
-        if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
+        #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
+        if: failure()
         id: slack_id
         run: |
           # Access the JSON string from the secret
@@ -219,7 +220,8 @@ jobs:
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
         shell: bash
       - name: Notify Slack
-        if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
+        #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
+        if: failure()
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ env.SLACK_USER_ID }}
