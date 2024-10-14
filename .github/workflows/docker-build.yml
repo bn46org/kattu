@@ -133,7 +133,7 @@ jobs:
               fi
             done
           done
-        #continue-on-error: true  
+        continue-on-error: true  
         if: ${{ inputs.BASE_IMAGE_BUILD == false }}
 
       - name: Build check for Docker datetime & git commit labels
@@ -158,7 +158,7 @@ jobs:
               exit 1;
             fi
           done
-        #continue-on-error: true  
+        continue-on-error: true  
         if: ${{ inputs.BASE_IMAGE_BUILD == false }}
 
       - name: Build image
