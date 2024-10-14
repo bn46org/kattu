@@ -208,18 +208,21 @@ jobs:
           if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
               echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
               SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+              SLACK_MESSAGE=":warning: *GitHub user ${{ inputs.GITHUB_USER }} is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
+          else
+              SLACK_MESSAGE="*PR Notification* :x:"
           fi
-          
-          # Print the final Slack user ID and set it as an environment variable
           echo "SLACK_USER_ID=$SLACK_USER_ID"
+          # Set Slack user ID and message as environment variables
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
         shell: bash
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ env.SLACK_USER_ID }}
           slack-message: |
-            *PR Notification* :white_check_mark:
+            ${{ env.SLACK_MESSAGE }}
             *Repository*: ${{ inputs.REPOSITORY }}
             *Pull Request*: ${{ inputs.PR_TITLE }}
             *Action*: ${{ inputs.ACTION }}
