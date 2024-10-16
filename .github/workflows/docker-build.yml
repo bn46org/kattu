@@ -191,13 +191,22 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - name: Decode Slack Users Secret
+      - name: Decrypt Slack Users  Map
         #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
         if: failure()
         id: slack_id
+        env:
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
         run: |
-          # Access the JSON string from the secret
-          SLACK_USERS_MAP="${{ secrets.SLACK_USERS_MAP }}"
+          # Install GPG
+          sudo apt-get update
+          sudo apt-get install -y gnupg
+          
+          # Decrypt the user_map.json.gpg file located in the .github/keys/ directory
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
+          
+          # Load the decrypted JSON file
+          SLACK_USERS_MAP=$(cat user_map.json)
           # Debug: Print the JSON to ensure it's properly formatted
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
           GITHUB_USER="${{ inputs.GITHUB_USER }}"
