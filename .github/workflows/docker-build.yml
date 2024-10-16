@@ -210,9 +210,17 @@ jobs:
           SLACK_USERS_MAP=$(cat user_map.json)
           # Debug: Print the JSON to ensure it's properly formatted
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-          GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          # Debug: Print the JSON to ensure it's properly formatted
+          #GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          # Determine the GitHub user depending on the event
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          else
+            GITHUB_USER="${{ github.actor }}"
+          fi
+          # Debug: Print the GitHub user and the JSON
+          echo "GitHub User: $GITHUB_USER"
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
+
           # Use jq to extract the Slack user ID from the JSON
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
           echo $SLACK_USER_ID
