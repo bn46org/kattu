@@ -53,7 +53,8 @@ on:
         required: true
       SLACK_USERS_MAP:
         required: true
-
+      GPG_USER_MAP_PASSPHRASE:
+        required: true
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
