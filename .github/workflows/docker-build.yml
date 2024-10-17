@@ -47,14 +47,14 @@ on:
         required: true
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
-      SLACK_BOT_TOKEN:
-        required: true
-      GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
-        required: true
-      SLACK_USERS_MAP:
-        required: true
-      GPG_USER_MAP_PASSPHRASE:
-        required: true
+      # SLACK_BOT_TOKEN:
+      #   required: true
+      # GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
+      #   required: true
+      # SLACK_USERS_MAP:
+      #   required: true
+      # GPG_USER_MAP_PASSPHRASE:
+      #   required: true
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
@@ -62,7 +62,9 @@ jobs:
       NAMESPACE: ${{ secrets.DEV_NAMESPACE_DOCKER_HUB }}
       SERVICE_LOCATION: ${{ inputs.SERVICE_LOCATION }}
       SERVICE_NAME: ${{ inputs.SERVICE_NAME }}
-
+      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      OPTIONAL_SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -198,6 +200,7 @@ jobs:
         id: slack_id
         env:
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+          OPTIONAL_SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
         run: |
           # Install GPG
           sudo apt-get update
@@ -227,7 +230,8 @@ jobs:
           # Check if the Slack user ID was found
           if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
               echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+              echo "optional: $OPTIONAL_SLACK_CHANNEL_ID"
+              SLACK_USER_ID="$OPTIONAL_SLACK_CHANNEL_ID"  # Use general channel ID secret
               SLACK_MESSAGE=":warning: *GitHub user ${{ inputs.GITHUB_USER }} is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
           else
               SLACK_MESSAGE="*PR Notification* :x:"
