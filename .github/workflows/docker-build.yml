@@ -194,33 +194,46 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - name: Decode Slack Users Secret
-        #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
-        if: failure()
+      - name: Decrypt Slack Users Map
+        if: failure()  # Runs only if the job fails
         id: slack_id
+        env:
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+          SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
         run: |
-          # Access the JSON string from the secret
-          SLACK_USERS_MAP="${{ secrets.SLACK_USERS_MAP }}"
-          # Debug: Print the JSON to ensure it's properly formatted
-          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-          GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          # Debug: Print the JSON to ensure it's properly formatted
-          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-          # Use jq to extract the Slack user ID from the JSON
-          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-          echo $SLACK_USER_ID
-          # Check if the Slack user ID was found
-          if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
-              echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
-              SLACK_MESSAGE=":warning: *GitHub user ${{ inputs.GITHUB_USER }} is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
-          else
-              SLACK_MESSAGE="*PR Notification* :x:"
+          # Install GPG if not already available
+          if ! command -v gpg > /dev/null; then
+            sudo apt-get update && sudo apt-get install -y gnupg
           fi
-          echo "SLACK_USER_ID=$SLACK_USER_ID"
-          # Set Slack user ID and message as environment variables
+          # Copy the user_map.json.gpg from the reusable workflow repo
+          cp .github/keys/user_map.json.gpg .
+          # Decrypt user map file
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
+          
+          # Read and parse user map
+          SLACK_USERS_MAP=$(cat user_map.json)
+          
+          # Determine GitHub user (actor or pull request initiator)
+          GITHUB_USER="${{ github.actor }}"
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          fi
+          
+          # Extract Slack user ID
+          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
+          
+          # Fallback to default Slack channel if user not found
+          if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
+            SLACK_USER_ID="$SLACK_CHANNEL_ID"
+            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*\n*PR Notification* :x:"
+          else
+            SLACK_MESSAGE="*PR Notification* :x:"
+          fi
+          
+          # Set environment variables for later steps
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
+
         shell: bash
       - name: Notify Slack
         #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
