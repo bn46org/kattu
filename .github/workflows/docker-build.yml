@@ -194,45 +194,25 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - name: Decrypt Slack Users  Map
+      - name: Decode Slack Users Secret
         #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
         if: failure()
         id: slack_id
-        env:
-          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-          OPTIONAL_SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
         run: |
-          echo "GPG_USER_MAP_PASSPHRASE: $GPG_USER_MAP_PASSPHRASE"
-          # Install GPG
-          sudo apt-get update
-          sudo apt-get install -y gnupg
-          
-          # Decrypt the user_map.json.gpg file located in the .github/keys/ directory
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
-          
-          # Load the decrypted JSON file
-          SLACK_USERS_MAP=$(cat user_map.json)
+          # Access the JSON string from the secret
+          SLACK_USERS_MAP="${{ secrets.SLACK_USERS_MAP }}"
           # Debug: Print the JSON to ensure it's properly formatted
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-          #GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          # Determine the GitHub user depending on the event
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          else
-            GITHUB_USER="${{ github.actor }}"
-          fi
-          # Debug: Print the GitHub user and the JSON
-          echo "GitHub User: $GITHUB_USER"
+          GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          # Debug: Print the JSON to ensure it's properly formatted
           echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-
           # Use jq to extract the Slack user ID from the JSON
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
           echo $SLACK_USER_ID
           # Check if the Slack user ID was found
           if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
               echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              echo "optional: $OPTIONAL_SLACK_CHANNEL_ID"
-              SLACK_USER_ID="$OPTIONAL_SLACK_CHANNEL_ID"  # Use general channel ID secret
+              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
               SLACK_MESSAGE=":warning: *GitHub user ${{ inputs.GITHUB_USER }} is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
           else
               SLACK_MESSAGE="*PR Notification* :x:"
