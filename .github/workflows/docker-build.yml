@@ -47,14 +47,14 @@ on:
         required: true
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
-      # SLACK_BOT_TOKEN:
-      #   required: true
-      # GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
-      #   required: true
-      # SLACK_USERS_MAP:
-      #   required: true
-      # GPG_USER_MAP_PASSPHRASE:
-      #   required: true
+      SLACK_BOT_TOKEN:
+        required: true
+      GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
+        required: true
+      SLACK_USERS_MAP:
+        required: true
+      GPG_USER_MAP_PASSPHRASE:
+        required: true
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
