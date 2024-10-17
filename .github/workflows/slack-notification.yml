@@ -23,8 +23,6 @@ on:
         required: true
       GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
         required: true
-      SLACK_USERS_MAP:
-        required: true
       GPG_USER_MAP_PASSPHRASE:
         required: true
 
