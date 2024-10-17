@@ -1,60 +1,73 @@
-name: 'Reusable Slack Notification Workflow'
+name: Slack Notification Workflow
 
 on:
   workflow_call:
     inputs:
-      pr_author:
-        description: 'PR Author from GitHub event'
+      GITHUB_USER:
         required: true
         type: string
-      repo:
-        description: 'Repository name'
+      REPOSITORY:
         required: true
         type: string
-      commit:
-        description: 'Commit SHA'
+      PR_TITLE:
         required: true
         type: string
-      message:
-        description: 'Commit message'
+      ACTION:
         required: true
         type: string
-      status:
-        description: 'Job status (success, failure)'
+      PR_URL:
         required: true
         type: string
-      workflow:
-        description: 'Workflow name'
-        required: true
-        type: string
-      job_name:
-        description: 'GitHub Job name'
-        required: true
-        type: string
-
-    secrets:
-      slack_mapping:
-        description: 'JSON Slack mapping of PR author to Slack user'
-      slack_oauth_token:
-        description: 'Slack OAuth token'
 
 jobs:
-  notify_slack:
+  slack_notification:
     runs-on: ubuntu-latest
-
     steps:
-    - name: 'Checkout repository'
-      uses: actions/checkout@v3
+      - name: Decrypt Slack Users Map
+        id: slack_id
+        env:
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+        run: |
+          # Install GPG
+          sudo apt-get update
+          sudo apt-get install -y gnupg
+          
+          # Copy the user_map.json.gpg from the reusable workflow repo
+          cp .github/keys/user_map.json.gpg .
+          
+          # Decrypt the user_map.json.gpg file
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
+          
+          # Load the decrypted JSON file
+          SLACK_USERS_MAP=$(cat user_map.json)
+          GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          # Use jq to extract the Slack user ID from the JSON
+          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
+          
+          # Check if the Slack user ID was found
+          if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
+              echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
+              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+              SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
+          else
+              SLACK_MESSAGE="*PR Notification* :x:"
+          fi
+          echo "SLACK_USER_ID=$SLACK_USER_ID"
+          
+          # Set Slack user ID and message as environment variables
+          echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
+        shell: bash
 
-    - name: 'Send Slack Notification'
-      uses: bhumi46/slack-notification-action@v1.0.1 # Reference your custom action path
-      env:
-        PR_AUTHOR: ${{ inputs.pr_author }}
-        REPO: ${{ inputs.repo }}
-        COMMIT: ${{ inputs.commit }}
-        MESSAGE: ${{ inputs.message }}
-        STATUS: ${{ inputs.status }}
-        WORKFLOW: ${{ inputs.workflow }}
-        JOB_NAME: ${{ inputs.job_name }}
-        SLACK_MAPPING: ${{ secrets.slack_mapping }}  # Centralized secret
-        SLACK_OAUTH_TOKEN: ${{ secrets.slack_oauth_token }}  # Centralized secret
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: ${{ env.SLACK_USER_ID }}
+          slack-message: |
+            ${{ env.SLACK_MESSAGE }}
+            *Repository*: ${{ inputs.REPOSITORY }}
+            *Pull Request*: ${{ inputs.PR_TITLE }}
+            *Action*: ${{ inputs.ACTION }}
+            *PR URL*: ${{ inputs.PR_URL }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
