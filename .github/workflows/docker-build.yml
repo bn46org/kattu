@@ -202,7 +202,7 @@ jobs:
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
           OPTIONAL_SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
         run: |
-          echo "envsecrets: $GPG_USER_MAP_PASSPHRASE"
+          echo "GPG_USER_MAP_PASSPHRASE: $GPG_USER_MAP_PASSPHRASE"
           # Install GPG
           sudo apt-get update
           sudo apt-get install -y gnupg
