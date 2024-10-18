@@ -197,7 +197,7 @@ jobs:
       # Call the Slack notification reusable workflow
       - name: Notify Slack
         if: failure()
-        uses: ./.github/workflows/slack-notification.yml
+        uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
         with:
           GITHUB_USER: ${{ inputs.GITHUB_USER }}
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
