@@ -195,18 +195,19 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
       # Call the Slack notification reusable workflow
-      - name: Notify Slack
-        if: failure()
-        uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
-        with:
-          GITHUB_USER: ${{ inputs.GITHUB_USER }}
-          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
-          PR_TITLE: ${{ inputs.PR_TITLE }}
-          PR_URL: ${{ inputs.PR_URL }}
-          REPOSITORY: ${{ inputs.REPOSITORY }}
-          ACTION: ${{ inputs.ACTION }}
+  notify-slack:
+    needs: build-dockers
+    if: failure()
+    uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
+    with:
+      GITHUB_USER: ${{ inputs.GITHUB_USER }}
+      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+      PR_TITLE: ${{ inputs.PR_TITLE }}
+      PR_URL: ${{ inputs.PR_URL }}
+      REPOSITORY: ${{ inputs.REPOSITORY }}
+      ACTION: ${{ inputs.ACTION }}
       # - name: Decrypt Slack Users Map
       #   if: failure()  # Runs only if the job fails
       #   id: slack_id
