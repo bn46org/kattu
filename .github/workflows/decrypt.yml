@@ -3,7 +3,7 @@ name: Decrypt GPG Key Workflow
 on:
   workflow_call:
     inputs:
-      gpg_passphrase:
+      GPG_USER_MAP_PASSPHRASE:
         required: true
         type: string
 
@@ -17,4 +17,4 @@ jobs:
       - name: Decrypt GPG Key
         run: |
           chmod +x ./decrypt.sh
-          GPG_PASSPHRASE=${{ inputs.gpg_passphrase }} ./decrypt.sh
+          GPG_PASSPHRASE=${{ inputs.GPG_USER_MAP_PASSPHRASE }} ./decrypt.sh
