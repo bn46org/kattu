@@ -1,0 +1,20 @@
+name: Decrypt GPG Key Workflow
+
+on:
+  workflow_call:
+    inputs:
+      gpg_passphrase:
+        required: true
+        type: string
+
+jobs:
+  decrypt-gpg-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Decrypt GPG Key
+        run: |
+          chmod +x ./decrypt.sh
+          GPG_PASSPHRASE=${{ inputs.gpg_passphrase }} ./decrypt.sh
