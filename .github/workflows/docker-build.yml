@@ -196,6 +196,7 @@ jobs:
           docker push $IMAGE_ID:$VERSION
       # Call the Slack notification reusable workflow
       - name: Notify Slack
+        if: failure()
         uses: ./.github/workflows/slack-notification.yml
         with:
           GITHUB_USER: ${{ inputs.GITHUB_USER }}
