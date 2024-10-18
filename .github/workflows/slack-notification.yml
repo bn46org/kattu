@@ -30,41 +30,35 @@ jobs:
   slack_notification:
     runs-on: ubuntu-latest
     steps:
-      - name: Decrypt Slack Users Map
-        id: slack_id
+      - name: Call Slack Notification Workflow (Decrypt JSON)
+        id: decrypt_slack_map
+        uses: ./github/workflows/first-workflow.yml
         env:
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      
+      - name: Load the decrypted Slack Users Map
+        id: load_users
         run: |
-          # Install GPG
-          sudo apt-get update
-          sudo apt-get install -y gnupg
+          # Load the Slack Users Map from the previous workflow
+          SLACK_USERS_MAP="${{ env.slack_users_map }}"
+          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
+          GITHUB_USER="${{ github.actor }}"
           
-          # Copy the user_map.json.gpg from the reusable workflow repo
-          cp .github/keys/user_map.json.gpg .
-          
-          # Decrypt the user_map.json.gpg file
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
-          
-          # Load the decrypted JSON file
-          SLACK_USERS_MAP=$(cat user_map.json)
-          GITHUB_USER="${{ inputs.GITHUB_USER }}"
           # Use jq to extract the Slack user ID from the JSON
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
           
           # Check if the Slack user ID was found
           if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
               echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"  # Use general channel ID secret
+              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"
               SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
           else
               SLACK_MESSAGE="*PR Notification* :x:"
           fi
-          echo "SLACK_USER_ID=$SLACK_USER_ID"
           
           # Set Slack user ID and message as environment variables
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
-        shell: bash
 
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.27.0
@@ -72,9 +66,9 @@ jobs:
           channel-id: ${{ env.SLACK_USER_ID }}
           slack-message: |
             ${{ env.SLACK_MESSAGE }}
-            *Repository*: ${{ inputs.REPOSITORY }}
-            *Pull Request*: ${{ inputs.PR_TITLE }}
-            *Action*: ${{ inputs.ACTION }}
-            *PR URL*: ${{ inputs.PR_URL }}
+            *Repository*: ${{ github.repository }}
+            *Pull Request*: ${{ github.event.pull_request.title }}
+            *Action*: ${{ github.event.action }}
+            *PR URL*: ${{ github.event.pull_request.html_url }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
