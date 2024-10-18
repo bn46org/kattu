@@ -2,10 +2,6 @@ name: Slack Notification Workflow
 
 on:
   workflow_call:
-    secrets:
-      GPG_USER_MAP_PASSPHRASE:
-        required: true
-
 jobs:
   slack_notification:
     runs-on: ubuntu-latest
