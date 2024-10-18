@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Call Slack Notification Workflow (Decrypt JSON)
         id: decrypt_slack_map
-        uses: ./github/workflows/first-workflow.yml
+        uses: ./github/workflows/user_map_decrypt.yml
         env:
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
       
