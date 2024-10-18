@@ -1,4 +1,4 @@
-name: Slack Notification Workflow
+name: Notify Slack Workflow
 
 on:
   workflow_call:
@@ -6,57 +6,62 @@ on:
       GITHUB_USER:
         required: true
         type: string
-      REPOSITORY:
+      PR_URL:
         required: true
         type: string
       PR_TITLE:
         required: true
         type: string
-      ACTION:
+      REPOSITORY:
         required: true
         type: string
-      PR_URL:
+      ACTION:
         required: true
         type: string
     secrets:
       SLACK_BOT_TOKEN:
         required: true
-      GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
-        required: true
       GPG_USER_MAP_PASSPHRASE:
+        required: true
+      SLACK_CHANNEL_ID:
         required: true
 
 jobs:
-  slack_notification:
+  notify:
     runs-on: ubuntu-latest
+    env:
+      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
     steps:
-      - name: Call Slack Notification Workflow (Decrypt JSON)
-        id: decrypt_slack_map
-        uses: bn46org/kattu/.github/workflows/user-map-decrypt.yml@develop
-        env:
-          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      
-      - name: Load the decrypted Slack Users Map
-        id: load_users
+      - name: Decrypt Slack Users Map
+        id: slack_id
         run: |
-          # Load the Slack Users Map from the previous workflow
-          SLACK_USERS_MAP="${{ env.slack_users_map }}"
-          echo "SLACK_USERS_MAP: $SLACK_USERS_MAP"
-          GITHUB_USER="${{ github.actor }}"
+          # Install GPG if not already available
+          if ! command -v gpg > /dev/null; then
+            sudo apt-get update && sudo apt-get install -y gnupg
+          fi
+          # Download the user_map.json.gpg from the GitHub repository
+          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
+          # Decrypt user map file
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
           
-          # Use jq to extract the Slack user ID from the JSON
+          # Read and parse user map
+          SLACK_USERS_MAP=$(cat user_map.json)
+          
+          # Determine GitHub user (actor or pull request initiator)
+          GITHUB_USER="${{ inputs.GITHUB_USER }}"
+          
+          # Extract Slack user ID
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
           
-          # Check if the Slack user ID was found
-          if [ "$SLACK_USER_ID" == "null" ] || [ -z "$SLACK_USER_ID" ]; then
-              echo "Slack user ID not found for GitHub user: $GITHUB_USER. Fallback to general channel."
-              SLACK_USER_ID="${{ secrets.GENERAL_CHANNEL_ID }}"
-              SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER is not mapped in Slack users.* Fallback to general channel.\n*PR Notification* :x:"
+          # Fallback to default Slack channel if user not found
+          if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
+            SLACK_USER_ID="$SLACK_CHANNEL_ID"
+            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*\n*PR Notification* :x:"
           else
-              SLACK_MESSAGE="*PR Notification* :x:"
+            SLACK_MESSAGE="*PR Notification* :x:"
           fi
           
-          # Set Slack user ID and message as environment variables
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
 
@@ -66,9 +71,9 @@ jobs:
           channel-id: ${{ env.SLACK_USER_ID }}
           slack-message: |
             ${{ env.SLACK_MESSAGE }}
-            *Repository*: ${{ github.repository }}
-            *Pull Request*: ${{ github.event.pull_request.title }}
-            *Action*: ${{ github.event.action }}
-            *PR URL*: ${{ github.event.pull_request.html_url }}
+            *Repository*: ${{ inputs.REPOSITORY }}
+            *Pull Request*: ${{ inputs.PR_TITLE }}
+            *Action*: ${{ inputs.ACTION }}
+            *PR URL*: ${{ inputs.PR_URL }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
