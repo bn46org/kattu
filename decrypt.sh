@@ -10,4 +10,4 @@ if [ -z "$GPG_PASSPHRASE" ]; then
 fi
 
 # Decrypt the GPG key
-gpg --batch --yes --passphrase "$GPG_PASSPHRASE" -o user_map.json -d keys/user_map.json.gpg
+gpg --batch --yes --passphrase "$GPG_PASSPHRASE" -o user_map.json -d .github/keys/user_map.json.gpg
