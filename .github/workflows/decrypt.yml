@@ -2,10 +2,9 @@ name: Decrypt GPG Key Workflow
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       GPG_USER_MAP_PASSPHRASE:
         required: true
-        type: string
 
 jobs:
   decrypt-gpg-key:
