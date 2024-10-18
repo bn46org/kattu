@@ -194,61 +194,73 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      - name: Decrypt Slack Users Map
-        if: failure()  # Runs only if the job fails
-        id: slack_id
-        env:
-          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-          SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
-        run: |
-          # Install GPG if not already available
-          if ! command -v gpg > /dev/null; then
-            sudo apt-get update && sudo apt-get install -y gnupg
-          fi
-          # Download the user_map.json.gpg from the GitHub repository
-          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
-          # Decrypt user map file
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
-          
-          # Read and parse user map
-          SLACK_USERS_MAP=$(cat user_map.json)
-          
-          # Determine GitHub user (actor or pull request initiator)
-          GITHUB_USER="${{ github.actor }}"
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            GITHUB_USER="${{ inputs.GITHUB_USER }}"
-          fi
-          
-          # Extract Slack user ID
-          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-          
-          # Fallback to default Slack channel if user not found
-          if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
-            SLACK_USER_ID="$SLACK_CHANNEL_ID"
-            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*\n*PR Notification* :x:"
-          else
-            SLACK_MESSAGE="*PR Notification* :x:"
-          fi
-          
-          # Set environment variables for later steps
-          echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
-          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
-
-        shell: bash
+      # Call the Slack notification reusable workflow
       - name: Notify Slack
-        #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
-        if: failure()
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: ./.github/workflows/slack-notification.yml
         with:
-          channel-id: ${{ env.SLACK_USER_ID }}
-          slack-message: |
-            ${{ env.SLACK_MESSAGE }}
-            *Repository*: ${{ inputs.REPOSITORY }}
-            *Pull Request*: ${{ inputs.PR_TITLE }}
-            *Action*: ${{ inputs.ACTION }}
-            *PR URL*: ${{ inputs.PR_URL }}
-        env:
+          GITHUB_USER: ${{ inputs.GITHUB_USER }}
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+          PR_TITLE: ${{ inputs.PR_TITLE }}
+          PR_URL: ${{ inputs.PR_URL }}
+          REPOSITORY: ${{ inputs.REPOSITORY }}
+          ACTION: ${{ inputs.ACTION }}
+      # - name: Decrypt Slack Users Map
+      #   if: failure()  # Runs only if the job fails
+      #   id: slack_id
+      #   env:
+      #     GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      #     SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+      #   run: |
+      #     # Install GPG if not already available
+      #     if ! command -v gpg > /dev/null; then
+      #       sudo apt-get update && sudo apt-get install -y gnupg
+      #     fi
+      #     # Download the user_map.json.gpg from the GitHub repository
+      #     curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
+      #     # Decrypt user map file
+      #     gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
+          
+      #     # Read and parse user map
+      #     SLACK_USERS_MAP=$(cat user_map.json)
+          
+      #     # Determine GitHub user (actor or pull request initiator)
+      #     GITHUB_USER="${{ github.actor }}"
+      #     if [ "${{ github.event_name }}" == "pull_request" ]; then
+      #       GITHUB_USER="${{ inputs.GITHUB_USER }}"
+      #     fi
+          
+      #     # Extract Slack user ID
+      #     SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
+          
+      #     # Fallback to default Slack channel if user not found
+      #     if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
+      #       SLACK_USER_ID="$SLACK_CHANNEL_ID"
+      #       SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*\n*PR Notification* :x:"
+      #     else
+      #       SLACK_MESSAGE="*PR Notification* :x:"
+      #     fi
+          
+      #     # Set environment variables for later steps
+      #     echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
+      #     echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
+
+      #   shell: bash
+      # - name: Notify Slack
+      #   #if: ${{ github.event_name != 'pull_request' && failure() }}  # Run only if it is not a pull request and the action fails
+      #   if: failure()
+      #   uses: slackapi/slack-github-action@v1.27.0
+      #   with:
+      #     channel-id: ${{ env.SLACK_USER_ID }}
+      #     slack-message: |
+      #       ${{ env.SLACK_MESSAGE }}
+      #       *Repository*: ${{ inputs.REPOSITORY }}
+      #       *Pull Request*: ${{ inputs.PR_TITLE }}
+      #       *Action*: ${{ inputs.ACTION }}
+      #       *PR URL*: ${{ inputs.PR_URL }}
+      #   env:
+      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # - uses: bhumi46/actions-slack-notification@v2
       #   with:
