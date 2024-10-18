@@ -30,6 +30,8 @@ jobs:
   slack_notification:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3 # Ensure this step is included
       - name: Call Slack Notification Workflow (Decrypt JSON)
         id: decrypt_slack_map
         uses: ./github/workflows/user_map_decrypt.yml
