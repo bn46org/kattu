@@ -1,0 +1,29 @@
+name: Slack Notification Workflow
+
+on:
+  workflow_call:
+    secrets:
+      GPG_USER_MAP_PASSPHRASE:
+        required: true
+
+jobs:
+  slack_notification:
+    runs-on: ubuntu-latest
+    outputs:
+      slack_users_map: ${{ steps.extract_json.outputs.slack_users_map }}
+    steps:
+      - name: Decrypt Slack Users Map
+        id: slack_id
+        env:
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg
+          cp .github/keys/user_map.json.gpg .
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt .github/keys/user_map.json.gpg
+          
+      - name: Output Slack Users Map
+        id: extract_json
+        run: |
+          slack_users_map=$(cat user_map.json)
+          echo "$slack_users_map" > $GITHUB_ENV
