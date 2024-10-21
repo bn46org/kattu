@@ -32,6 +32,7 @@ jobs:
     env:
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     steps:
       - name: Decrypt Slack Users Map
         id: slack_id
