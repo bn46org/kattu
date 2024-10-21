@@ -18,16 +18,13 @@ on:
       ACTION:
         required: true
         type: string
-    #secrets:
+    secrets:
       SLACK_BOT_TOKEN:
         required: true
-        type: string
       GPG_USER_MAP_PASSPHRASE:
         required: true
-        type: string
       SLACK_CHANNEL_ID:
         required: true
-        type: string
 
 jobs:
   notify:
