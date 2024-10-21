@@ -49,7 +49,7 @@ on:
         required: true
       SLACK_BOT_TOKEN:
         required: true
-      GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
+      SLACK_CHANNEL_ID:  # Use the general channel ID secret here
         required: true
       # SLACK_USERS_MAP:
       #   required: true
