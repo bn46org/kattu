@@ -40,21 +40,28 @@ on:
       ACTION:
         required: true
         type: string
-    secrets:
+    #secrets:
       RELEASE_DOCKER_HUB:
         required: true
+        type: string
       ACTOR_DOCKER_HUB:
         required: true
+        type: string
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
+        type: string
       SLACK_BOT_TOKEN:
         required: true
+        type: string
       GENERAL_CHANNEL_ID:  # Use the general channel ID secret here
         required: true
+        type: string
       SLACK_USERS_MAP:
         required: true
+        type: string
       GPG_USER_MAP_PASSPHRASE:
         required: true
+        type: string
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
