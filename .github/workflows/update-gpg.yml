@@ -51,4 +51,4 @@ jobs:
           git commit -m "Updated user map with new users"
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
