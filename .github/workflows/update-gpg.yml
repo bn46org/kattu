@@ -49,6 +49,6 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git add .github/keys/user_map.json.gpg
           git commit -m "Updated user map with new users"
-          git push origin main
+          git push origin ${{ github.ref_name }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
