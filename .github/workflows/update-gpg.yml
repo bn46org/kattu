@@ -1,14 +1,14 @@
 name: Update GPG File Workflow
 
 on:
-  workflow_dispatch:  # This allows manual triggering
+  workflow_dispatch:
     inputs:
-      NEW_GITHUB_USER:
-        description: "GitHub username to add"
+      NEW_GITHUB_USERS:
+        description: "Comma-separated list of GitHub usernames to add"
         required: true
         type: string
-      NEW_SLACK_USER_ID:
-        description: "Slack user ID corresponding to GitHub user"
+      NEW_SLACK_USER_IDS:
+        description: "Comma-separated list of Slack user IDs corresponding to the GitHub users"
         required: true
         type: string
 
@@ -25,25 +25,44 @@ jobs:
 
       - name: Step 2 - Add missing users
         run: |
-          # Get the dynamic inputs from the workflow_dispatch trigger
-          NEW_USER="${{ inputs.NEW_GITHUB_USER }}"
-          NEW_SLACK_ID="${{ inputs.NEW_SLACK_USER_ID }}"
+          NEW_GITHUB_USERS="${{ inputs.NEW_GITHUB_USERS }}"
+          NEW_SLACK_USER_IDS="${{ inputs.NEW_SLACK_USER_IDS }}"
           
-          echo "Adding GitHub user: $NEW_USER with Slack ID: $NEW_SLACK_ID"
+          # Split the comma-separated lists into arrays
+          IFS=',' read -r -a github_users <<< "$NEW_GITHUB_USERS"
+          IFS=',' read -r -a slack_user_ids <<< "$NEW_SLACK_USER_IDS"
           
-          # Check if the user already exists
-          if jq -e --arg user "$NEW_USER" '.[$user]' user_map.json > /dev/null; then
-            echo "User $NEW_USER already exists."
-          else
-            jq --arg user "$NEW_USER" --arg slack_id "$NEW_SLACK_ID" '.[$user] = $slack_id' user_map.json > temp.json && mv temp.json user_map.json
-            echo "User $NEW_USER added."
+          # Check if both arrays have the same length
+          if [ "${#github_users[@]}" -ne "${#slack_user_ids[@]}" ]; then
+            echo "Error: The number of GitHub users and Slack user IDs must be the same."
+            exit 1
           fi
+          
+          # Iterate over the arrays and add the users to the JSON file
+          for i in "${!github_users[@]}"; do
+            user="${github_users[$i]}"
+            slack_id="${slack_user_ids[$i]}"
+            
+            echo "Adding GitHub user: $user with Slack ID: $slack_id"
+            
+            if jq -e --arg user "$user" '.[$user]' user_map.json > /dev/null; then
+              echo "User $user already exists."
+            else
+              jq --arg user "$user" --arg slack_id "$slack_id" '.[$user] = $slack_id' user_map.json > temp.json && mv temp.json user_map.json
+              echo "User $user added."
+            fi
+          done
 
-      - name: Step 3 - Encrypt the updated file
+      - name: Step 3 - Show the updated JSON output
         run: |
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output .github/keys/user_map.json.gpg --symmetric user_map.json
+          echo "Updated user_map.json:"
+          cat user_map.json
 
-      - name: Step 4 - Commit and push the updated file
+      - name: Step 4 - Encrypt the updated file with AES256
+        run: |
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --symmetric --cipher-algo AES256 --output .github/keys/user_map.json.gpg user_map.json
+
+      - name: Step 5 - Commit and push the updated file
         run: |
           git config --global user.email "github-bot@example.com"
           git config --global user.name "GitHub Action Bot"
