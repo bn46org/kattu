@@ -1,0 +1,54 @@
+name: Update GPG File Workflow
+
+on:
+  workflow_dispatch:  # This allows manual triggering
+    inputs:
+      NEW_GITHUB_USER:
+        description: "GitHub username to add"
+        required: true
+        type: string
+      NEW_SLACK_USER_ID:
+        description: "Slack user ID corresponding to GitHub user"
+        required: true
+        type: string
+
+jobs:
+  update-gpg-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Step 1 - Decrypt the GPG file
+        run: |
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt .github/keys/user_map.json.gpg
+
+      - name: Step 2 - Add missing users
+        run: |
+          # Get the dynamic inputs from the workflow_dispatch trigger
+          NEW_USER="${{ inputs.NEW_GITHUB_USER }}"
+          NEW_SLACK_ID="${{ inputs.NEW_SLACK_USER_ID }}"
+          
+          echo "Adding GitHub user: $NEW_USER with Slack ID: $NEW_SLACK_ID"
+          
+          # Check if the user already exists
+          if jq -e --arg user "$NEW_USER" '.[$user]' user_map.json > /dev/null; then
+            echo "User $NEW_USER already exists."
+          else
+            jq --arg user "$NEW_USER" --arg slack_id "$NEW_SLACK_ID" '.[$user] = $slack_id' user_map.json > temp.json && mv temp.json user_map.json
+            echo "User $NEW_USER added."
+          fi
+
+      - name: Step 3 - Encrypt the updated file
+        run: |
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output .github/keys/user_map.json.gpg --symmetric user_map.json
+
+      - name: Step 4 - Commit and push the updated file
+        run: |
+          git config --global user.email "github-bot@example.com"
+          git config --global user.name "GitHub Action Bot"
+          git add .github/keys/user_map.json.gpg
+          git commit -m "Updated user map with new users"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
