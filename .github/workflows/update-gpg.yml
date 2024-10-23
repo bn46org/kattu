@@ -1,7 +1,7 @@
 name: Update Slack User Map Workflow
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       NEW_USERS:
         description: "Comma-separated list of new GitHub users and Slack user IDs to add in the format github_user:slack_user_id"
@@ -11,7 +11,6 @@ on:
         description: "Comma-separated list of GitHub usernames to revoke"
         required: false
         type: string
-
 jobs:
   update_user_map:
     runs-on: ubuntu-latest
