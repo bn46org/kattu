@@ -1,73 +1,119 @@
-name: Update GPG File Workflow
+name: Update Slack User Map Workflow
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      NEW_GITHUB_USERS:
-        description: "Comma-separated list of GitHub usernames to add"
-        required: true
+      NEW_USERS:
+        description: "Comma-separated list of new GitHub users and Slack user IDs to add in the format github_user:slack_user_id"
+        required: false
         type: string
-      NEW_SLACK_USER_IDS:
-        description: "Comma-separated list of Slack user IDs corresponding to the GitHub users"
-        required: true
+      REVOKE_GITHUB_USERS:
+        description: "Comma-separated list of GitHub usernames to revoke"
+        required: false
         type: string
+    secrets:
+      GPG_USER_MAP_PASSPHRASE:
+        required: true
 
 jobs:
-  update-gpg-file:
+  update_user_map:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
-
-      - name: Step 1 - Decrypt the GPG file
+      
+      - name: Step 1 - Check and Install GPG
         run: |
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt .github/keys/user_map.json.gpg
-
-      - name: Step 2 - Add missing users
-        run: |
-          NEW_GITHUB_USERS="${{ inputs.NEW_GITHUB_USERS }}"
-          NEW_SLACK_USER_IDS="${{ inputs.NEW_SLACK_USER_IDS }}"
-          
-          # Split the comma-separated lists into arrays
-          IFS=',' read -r -a github_users <<< "$NEW_GITHUB_USERS"
-          IFS=',' read -r -a slack_user_ids <<< "$NEW_SLACK_USER_IDS"
-          
-          # Check if both arrays have the same length
-          if [ "${#github_users[@]}" -ne "${#slack_user_ids[@]}" ]; then
-            echo "Error: The number of GitHub users and Slack user IDs must be the same."
-            exit 1
+          echo "Checking if GPG is installed..."
+          if ! command -v gpg > /dev/null; then
+            echo "GPG not found. Installing..."
+            sudo apt-get update && sudo apt-get install -y gnupg
+          else
+            echo "GPG is already installed."
           fi
           
-          # Iterate over the arrays and add the users to the JSON file
-          for i in "${!github_users[@]}"; do
-            user="${github_users[$i]}"
-            slack_id="${slack_user_ids[$i]}"
-            
-            echo "Adding GitHub user: $user with Slack ID: $slack_id"
-            
-            if jq -e --arg user "$user" '.[$user]' user_map.json > /dev/null; then
-              echo "User $user already exists."
+      - name: Step 2 - Download and Decrypt Slack Users Map
+        run: |
+          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
+          
+      - name: Step 3 - Parse New Users and Skip Existing
+        if: ${{ inputs.NEW_USERS != '' }}
+        run: |
+          echo "Parsing and adding new users..."
+          NEW_USERS="${{ inputs.NEW_USERS }}"
+          EXISTING_USERS=$(jq -r 'keys[]' user_map.json)
+
+          ADD_USER=false
+          for USER_PAIR in $(echo $NEW_USERS | tr "," "\n"); do
+            GITHUB_USER=$(echo "$USER_PAIR" | cut -d':' -f1)
+            SLACK_USER_ID=$(echo "$USER_PAIR" | cut -d':' -f2)
+
+            if echo "$EXISTING_USERS" | grep -q "$GITHUB_USER"; then
+              echo "User $GITHUB_USER already exists. Skipping..."
             else
-              jq --arg user "$user" --arg slack_id "$slack_id" '.[$user] = $slack_id' user_map.json > temp.json && mv temp.json user_map.json
-              echo "User $user added."
+              echo "Adding new user: $GITHUB_USER -> $SLACK_USER_ID"
+              jq --arg gh_user "$GITHUB_USER" --arg slack_id "$SLACK_USER_ID" '.[$gh_user] = $slack_id' user_map.json > tmp.json && mv tmp.json user_map.json
+              ADD_USER=true
             fi
           done
 
-      - name: Step 3 - Show the updated JSON output
+          if [ "$ADD_USER" = false ]; then
+            echo "No new users added."
+          else
+            echo "New users added successfully."
+          fi
+
+      - name: Debugging - Show User Map After Adding Users
+        if: ${{ inputs.NEW_USERS != '' }}
         run: |
-          echo "Updated user_map.json:"
+          echo "Showing updated user map after adding new users..."
           cat user_map.json
 
-      - name: Step 4 - Encrypt the updated file with AES256
+      - name: Step 4 - Revoke Users
+        if: ${{ inputs.REVOKE_GITHUB_USERS != '' }}
         run: |
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --symmetric --cipher-algo AES256 --output .github/keys/user_map.json.gpg user_map.json
+          echo "Revoking specified users..."
+          REVOKE_USERS="${{ inputs.REVOKE_GITHUB_USERS }}"
 
-      - name: Step 5 - Commit and push the updated file
+          for REVOKE_USER in $(echo $REVOKE_USERS | tr "," "\n"); do
+            if jq -e --arg user "$REVOKE_USER" '.[$user]' user_map.json > /dev/null; then
+              echo "Revoking GitHub user: $REVOKE_USER"
+              jq "del(.\"$REVOKE_USER\")" user_map.json > tmp.json && mv tmp.json user_map.json
+            else
+              echo "User $REVOKE_USER does not exist. Skipping..."
+            fi
+          done
+
+      - name: Debugging - Show User Map After Revoking Users
+        if: ${{ inputs.REVOKE_GITHUB_USERS != '' }}
+        run: |
+          echo "Showing updated user map after revoking users..."
+          cat user_map.json
+
+      - name: Step 5 - Encrypt Updated User Map
+        if: ${{ inputs.NEW_USERS != '' || inputs.REVOKE_GITHUB_USERS != '' }}
+        run: |
+          echo "Encrypting the updated user map..."
+          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --symmetric --cipher-algo AES256 --output user_map.json.gpg user_map.json
+          echo "Encryption completed."
+
+      - name: Step 6 - Push Updated Map to Repository
+        if: ${{ inputs.NEW_USERS != '' || inputs.REVOKE_GITHUB_USERS != '' }}
         run: |
           git config --global user.email "github-bot@example.com"
           git config --global user.name "GitHub Action Bot"
+          
+          # Ensure the repository is up to date
+          #git pull origin ${{ github.ref_name }}
+
+          # Add the updated encrypted file
           git add .github/keys/user_map.json.gpg
+
+          # Commit the changes
           git commit -m "Updated user map with new users"
+
+          # Push the changes to the current branch
           git push origin ${{ github.ref_name }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
