@@ -28,25 +28,25 @@ on:
       GITHUB_USER:
         required: true
         type: string
-      PR_URL:
-        required: true
-        type: string
+      # PR_URL:
+      #   required: true
+      #   type: string
       PR_TITLE:
         required: true
         type: string
       ACTION:
         required: true
         type: string
-      COMMIT_URL:
+      COMMIT:
         required: true
         type: string
-      REPO_URL:
+      REPO:
         required: true
         type: string
       JOB_URL:
         required: true
         type: string
-      MESSAGE_URL:
+      MESSAGE:
         required: true
         type: string
     secrets:
@@ -227,12 +227,12 @@ jobs:
     with:
       GITHUB_USER: ${{ inputs.GITHUB_USER }}
       PR_TITLE: ${{ inputs.PR_TITLE }}
-      PR_URL: ${{ inputs.PR_URL }}
+      #PR_URL: ${{ inputs.PR_URL }}
       ACTION: ${{ inputs.ACTION }}
-      COMMIT_URL: ${{ inputs.COMMIT_URL }}
-      REPO_URL: ${{ inputs.REPO_URL }}
+      COMMIT: ${{ inputs.COMMIT_URL }}
+      REPO: ${{ inputs.REPO_URL }}
       JOB_URL: ${{ inputs.JOB_URL }}
-      MESSAGE_URL: ${{ inputs.MESSAGE_URL }}
+      MESSAGE: ${{ inputs.MESSAGE_URL }}
 
       # - name: Decrypt Slack Users Map
       #   if: failure()  # Runs only if the job fails
