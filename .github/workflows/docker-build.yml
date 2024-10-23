@@ -31,7 +31,10 @@ on:
       # PR_URL:
       #   required: true
       #   type: string
-      PR_TITLE:
+      # PR_TITLE:
+      #   required: true
+      #   type: string
+      WORKFLOW:
         required: true
         type: string
       ACTION:
@@ -226,7 +229,8 @@ jobs:
     uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
     with:
       GITHUB_USER: ${{ inputs.GITHUB_USER }}
-      PR_TITLE: ${{ inputs.PR_TITLE }}
+      #PR_TITLE: ${{ inputs.PR_TITLE }}
+      WORKFLOW: ${{ INPUTS.WORKFLOW }}
       #PR_URL: ${{ inputs.PR_URL }}
       ACTION: ${{ inputs.ACTION }}
       COMMIT: ${{ inputs.COMMIT }}
