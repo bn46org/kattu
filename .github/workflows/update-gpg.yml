@@ -101,7 +101,7 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           
           # Ensure the repository is up to date
-          #git pull origin ${{ github.ref_name }}
+          git pull origin ${{ github.ref_name }}
 
           # Add the updated encrypted file
           git add .github/keys/user_map.json.gpg
