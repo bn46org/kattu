@@ -65,16 +65,15 @@ jobs:
           if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
             SLACK_USER_ID="${{ secrets.SLACK_CHANNEL_ID }}"
             SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
-            SLACK_MESSAGE_CONTENT="*Repository*: ${{ inputs.REPO_URL }}\n*Commit ID*: ${{ inputs.COMMIT_URL }}\n*PR URL*: ${{ inputs.PR_URL }}\n*Job URL*: ${{ inputs.JOB_URL }}\n*Message URL*: ${{ inputs.MESSAGE_URL }}"
+            SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
           else
             SLACK_MESSAGE="*PR Notification*"
-            SLACK_MESSAGE_CONTENT="*Repository*: ${{ inputs.REPO_URL }}\n*Commit ID*: ${{ inputs.COMMIT_URL }}\n*PR URL*: ${{ inputs.PR_URL }}\n*Action*: ${{ inputs.ACTION }}\n*Job URL*: ${{ inputs.JOB_URL }}\n*Message URL*: ${{ inputs.MESSAGE_URL }}"
+            SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Action*: ${{ inputs.ACTION }}\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
           fi
       
           echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
           echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
-
 
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.27.0
