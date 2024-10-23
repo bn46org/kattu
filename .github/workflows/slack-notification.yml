@@ -39,16 +39,10 @@ jobs:
           if ! command -v gpg > /dev/null; then
             sudo apt-get update && sudo apt-get install -y gnupg
           fi
-
-      - name: Download Slack Users Map
+      - name: Download and Decrypt Slack Users Map
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
-
-      - name: Decrypt Slack Users Map
-        id: decrypt_slack_map
-        run: |
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
-
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
       - name: Read Slack Users Map
         id: read_slack_map
         run: |
