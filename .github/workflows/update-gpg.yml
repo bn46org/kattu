@@ -31,7 +31,7 @@ jobs:
       - name: Step 2 - Download and Decrypt Slack Users Map
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt .github/keys/user_map.json.gpg
           
       - name: Step 3 - Parse New Users and Skip Existing
         if: ${{ inputs.NEW_USERS != '' }}
@@ -91,25 +91,17 @@ jobs:
         if: ${{ inputs.NEW_USERS != '' || inputs.REVOKE_GITHUB_USERS != '' }}
         run: |
           echo "Encrypting the updated user map..."
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --symmetric --cipher-algo AES256 --output user_map.json.gpg user_map.json
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --symmetric --cipher-algo AES256 --output .github/keys/user_map.json.gpg user_map.json
           echo "Encryption completed."
 
       - name: Step 6 - Push Updated Map to Repository
         if: ${{ inputs.NEW_USERS != '' || inputs.REVOKE_GITHUB_USERS != '' }}
         run: |
           git config --global user.email "github-bot@example.com"
-          git config --global user.name "GitHub Action Bot"
-          
-          # Ensure the repository is up to date
-          git pull origin ${{ github.ref_name }}
-
-          # Add the updated encrypted file
+          git config --global user.name "GitHub Action Bot"      
+          git pull origin ${{ github.ref_name }
           git add .github/keys/user_map.json.gpg
-
-          # Commit the changes
           git commit -m "Updated user map with new users"
-
-          # Push the changes to the current branch
           git push origin ${{ github.ref_name }}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
