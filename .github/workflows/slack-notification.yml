@@ -43,45 +43,44 @@ jobs:
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46org/kattu/develop/.github/keys/user_map.json.gpg
           gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
-      - name: Read Slack Users Map
-        id: read_slack_map
+  
+      - name: Determine Slack Message and Get Slack User ID
+        id: slack_message_id
         run: |
+          # Read and assign the user map from the decrypted JSON file
           SLACK_USERS_MAP=$(cat user_map.json)
+  
+          # Log the SLACK_USERS_MAP for debugging (remove this in production)
           echo "SLACK_USERS_MAP=$SLACK_USERS_MAP"
-          echo "SLACK_USERS_MAP=$SLACK_USERS_MAP" >> $GITHUB_ENV
-
-          - name: Determine Slack Message and Get Slack User ID
-            id: slack_message_id
-            run: |
-              # Determine Slack User ID from the decrypted user map
-              SLACK_USERS_MAP=$(cat user_map.json)
-              GITHUB_USER="${{ inputs.GITHUB_USER }}"
-              SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-          
-              # Set default channel and message based on user ID presence
-              if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
-                SLACK_USER_ID="${{ secrets.SLACK_CHANNEL_ID }}"
-                SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
-                SLACK_MESSAGE_CONTENT="*Repository*: [${{ inputs.REPOSITORY }}](${{ inputs.REPO_URL }})\n
-                *Commit ID*: [${{ inputs.COMMIT_SHA }}](${{ inputs.COMMIT_URL }})\n
-                *PR URL*: ${{ inputs.PR_URL }}\n
-                *Job URL*: [Job Details](${{ inputs.JOB_URL }})\n
-                *Message URL*: [Message Details](${{ inputs.MESSAGE_URL }})"
-              else
-                SLACK_MESSAGE="*PR Notification*"
-                SLACK_MESSAGE_CONTENT="*Repository*: [${{ inputs.REPOSITORY }}](${{ inputs.REPO_URL }})\n
-                *Commit ID*: [${{ inputs.COMMIT_SHA }}](${{ inputs.COMMIT_URL }})\n
-                *PR URL*: ${{ inputs.PR_URL }}\n
-                *Action*: ${{ inputs.ACTION }}\n
-                *Job URL*: [Job Details](${{ inputs.JOB_URL }})\n
-                *Message URL*: [Message Details](${{ inputs.MESSAGE_URL }})"
-              fi
-          
-              # Output environment variables for further steps
-              echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
-              echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
-              echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
-
+      
+          GITHUB_USER="${{ inputs.GITHUB_USER }}"
+      
+          # Use jq to extract the Slack user ID from the map
+          SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
+      
+          # Check if the Slack user ID was found
+          if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
+            SLACK_USER_ID="${{ secrets.SLACK_CHANNEL_ID }}"
+            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
+            SLACK_MESSAGE_CONTENT="*Repository*: [${{ inputs.REPOSITORY }}](${{ inputs.REPO_URL }})\n
+            *Commit ID*: [${{ inputs.COMMIT_SHA }}](${{ inputs.COMMIT_URL }})\n
+            *PR URL*: ${{ inputs.PR_URL }}\n
+            *Job URL*: [Job Details](${{ inputs.JOB_URL }})\n
+            *Message URL*: [Message Details](${{ inputs.MESSAGE_URL }})"
+          else
+            SLACK_MESSAGE="*PR Notification*"
+            SLACK_MESSAGE_CONTENT="*Repository*: [${{ inputs.REPOSITORY }}](${{ inputs.REPO_URL }})\n
+            *Commit ID*: [${{ inputs.COMMIT_SHA }}](${{ inputs.COMMIT_URL }})\n
+            *PR URL*: ${{ inputs.PR_URL }}\n
+            *Action*: ${{ inputs.ACTION }}\n
+            *Job URL*: [Job Details](${{ inputs.JOB_URL }})\n
+            *Message URL*: [Message Details](${{ inputs.MESSAGE_URL }})"
+          fi
+      
+          # Output environment variables for further steps
+          echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
 
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.27.0
