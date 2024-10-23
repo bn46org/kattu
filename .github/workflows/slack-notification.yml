@@ -42,7 +42,7 @@ jobs:
 
       - name: Download Slack Users Map
         run: |
-          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/yourrepo/develop/.github/keys/user_map.json.gpg
+          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
 
       - name: Decrypt Slack Users Map
         id: decrypt_slack_map
