@@ -208,6 +208,8 @@ jobs:
       #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       #     SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
   notify-slack:
+    needs: build-dockers
+    if: failure()
     secrets:
         GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
