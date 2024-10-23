@@ -41,7 +41,7 @@ jobs:
           fi
       - name: Download and Decrypt Slack Users Map
         run: |
-          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
+          curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46org/kattu/develop/.github/keys/user_map.json.gpg
           gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
       - name: Read Slack Users Map
         id: read_slack_map
