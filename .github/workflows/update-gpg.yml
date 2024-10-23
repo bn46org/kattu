@@ -11,9 +11,6 @@ on:
         description: "Comma-separated list of GitHub usernames to revoke"
         required: false
         type: string
-    secrets:
-      GPG_USER_MAP_PASSPHRASE:
-        required: true
 
 jobs:
   update_user_map:
@@ -35,7 +32,7 @@ jobs:
       - name: Step 2 - Download and Decrypt Slack Users Map
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46/kattu/develop/.github/keys/user_map.json.gpg
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --output user_map.json --decrypt user_map.json.gpg
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
           
       - name: Step 3 - Parse New Users and Skip Existing
         if: ${{ inputs.NEW_USERS != '' }}
@@ -95,7 +92,7 @@ jobs:
         if: ${{ inputs.NEW_USERS != '' || inputs.REVOKE_GITHUB_USERS != '' }}
         run: |
           echo "Encrypting the updated user map..."
-          gpg --batch --yes --passphrase "$GPG_USER_MAP_PASSPHRASE" --symmetric --cipher-algo AES256 --output user_map.json.gpg user_map.json
+          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --symmetric --cipher-algo AES256 --output user_map.json.gpg user_map.json
           echo "Encryption completed."
 
       - name: Step 6 - Push Updated Map to Repository
