@@ -47,6 +47,7 @@ jobs:
         id: read_slack_map
         run: |
           SLACK_USERS_MAP=$(cat user_map.json)
+          echo "SLACK_USERS_MAP=$SLACK_USERS_MAP"
           echo "SLACK_USERS_MAP=$SLACK_USERS_MAP" >> $GITHUB_ENV
 
       - name: Get Slack User ID
