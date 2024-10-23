@@ -78,7 +78,7 @@ jobs:
             *Message URL*: ${{ inputs.MESSAGE_URL }}"
           else
             SLACK_MESSAGE="*PR Notification*"
-            SLACK_MESSAGE_CONTENT="*Repository*: [${{ inputs.REPOSITORY }}](${{ inputs.REPO_URL }})\n
+            SLACK_MESSAGE_CONTENT="*Repository*: ${{ inputs.REPO_URL }}\n
             *Commit ID*: ${{ inputs.COMMIT_URL }}\n
             *PR URL*: ${{ inputs.PR_URL }}\n
             *Action*: ${{ inputs.ACTION }}\n
