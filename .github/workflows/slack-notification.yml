@@ -9,7 +9,10 @@ on:
       # PR_URL:
       #   required: true
       #   type: string
-      PR_TITLE:
+      # PR_TITLE:
+      #   required: true
+      #   type: string
+      WORKFLOW:
         required: true
         type: string
       ACTION:
@@ -82,7 +85,7 @@ jobs:
           slack-message: |
             ${{ env.SLACK_MESSAGE }}
             *Repository*: ${{ inputs.REPO }}
-            *PR Title*: ${{ inputs.PR_TITLE }}
+            *Workflow*: ${{ inputs.WORKFLOW }}
             *Commit ID*: ${{ inputs.COMMIT }}
             *Action*: ${{ inputs.ACTION }}
             *Job*: ${{ inputs.JOB_URL }}
