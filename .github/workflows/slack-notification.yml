@@ -12,10 +12,19 @@ on:
       PR_TITLE:
         required: true
         type: string
-      REPOSITORY:
+      ACTION:
         required: true
         type: string
-      ACTION:
+      COMMIT_URL:
+        required: true
+        type: string
+      REPO_URL:
+        required: true
+        type: string
+      JOB_URL:
+        required: true
+        type: string
+      MESSAGE_URL:
         required: true
         type: string
     secrets:
