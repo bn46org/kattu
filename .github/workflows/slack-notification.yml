@@ -6,9 +6,9 @@ on:
       GITHUB_USER:
         required: true
         type: string
-      # PR_URL:
-      #   required: true
-      #   type: string
+      PR_URL:
+        required: true
+        type: string
       # PR_TITLE:
       #   required: true
       #   type: string
@@ -84,6 +84,7 @@ jobs:
           channel-id: ${{ env.SLACK_USER_ID }}
           slack-message: |
             ${{ env.SLACK_MESSAGE }}
+            *PR_URL*: ${{ inputs.PR_URL }}
             *Repository*: ${{ inputs.REPO }}
             *Workflow*: ${{ inputs.WORKFLOW }}
             *Commit ID*: ${{ inputs.COMMIT }}
