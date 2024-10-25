@@ -70,7 +70,7 @@ jobs:
             SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
             #SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
           else
-            SLACK_MESSAGE="*PR Notification* :red_circle: Build Failed"
+            SLACK_MESSAGE=":no_entry: Failed GitHub Actions"
             #SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Action*: ${{ inputs.ACTION }}\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
           fi
       
