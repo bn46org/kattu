@@ -28,9 +28,9 @@ on:
       GITHUB_USER:
         required: true
         type: string
-      # PR_URL:
-      #   required: true
-      #   type: string
+      PR_URL:
+        required: true
+        type: string
       # PR_TITLE:
       #   required: true
       #   type: string
@@ -231,7 +231,7 @@ jobs:
       GITHUB_USER: ${{ inputs.GITHUB_USER }}
       #PR_TITLE: ${{ inputs.PR_TITLE }}
       WORKFLOW: ${{ INPUTS.WORKFLOW }}
-      #PR_URL: ${{ inputs.PR_URL }}
+      PR_URL: ${{ inputs.PR_URL }}
       ACTION: ${{ inputs.ACTION }}
       COMMIT: ${{ inputs.COMMIT }}
       REPO: ${{ inputs.REPO }}
