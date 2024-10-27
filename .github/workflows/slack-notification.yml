@@ -37,7 +37,7 @@ on:
         required: true
       SLACK_CHANNEL_ID:
         required: true
-      engg_team_slack_channel:
+      ENGG_TEAM_SLACK_CHANNEL:
         required: true
 
 jobs:
@@ -47,7 +47,7 @@ jobs:
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      SECONDARY_CHANNEL_ID: ${{ secrets.engg_team_slack_channel }}
+      SECONDARY_CHANNEL_ID: ${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}
     steps:
       - name: Install GPG
         run: |
@@ -81,7 +81,7 @@ jobs:
               TARGET_CHANNEL_ID="$SLACK_USER_ID"
               SECONDARY_MESSAGE=":no_entry: Failed GitHub Actions for push/merge by $GITHUB_USER"
               
-              echo "SECONDARY_CHANNEL_ID=${{ secrets.engg_team_slack_channel }}" >> $GITHUB_ENV
+              echo "SECONDARY_CHANNEL_ID=${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}" >> $GITHUB_ENV
               echo "SECONDARY_MESSAGE=$SECONDARY_MESSAGE" >> $GITHUB_ENV
             fi
 
