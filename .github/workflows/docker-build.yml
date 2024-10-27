@@ -61,8 +61,10 @@ on:
         required: true
       SLACK_BOT_TOKEN:
         required: true
-      SLACK_CHANNEL_ID:  # Use the general channel ID secret here
+      DEFAULT_CHANNEL_ID:
         required: true
+      # SLACK_CHANNEL_ID:  # Use the general channel ID secret here
+      #   required: true
       # SLACK_USERS_MAP:
       #   required: true
       GPG_USER_MAP_PASSPHRASE:
@@ -77,8 +79,9 @@ jobs:
       SERVICE_LOCATION: ${{ inputs.SERVICE_LOCATION }}
       SERVICE_NAME: ${{ inputs.SERVICE_NAME }}
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      OPTIONAL_SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -227,8 +230,8 @@ jobs:
     secrets:
         GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
-        SECONDARY_CHANNEL_ID: ${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}
+        DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+        SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID}}
     uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
     with:
       GITHUB_USER: ${{ inputs.GITHUB_USER }}
