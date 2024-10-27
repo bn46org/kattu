@@ -45,9 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      SECONDARY_CHANNEL_ID: ${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}
+      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
     steps:
       - name: Install GPG
         run: |
@@ -67,7 +67,7 @@ jobs:
           
           # Fetch Slack user ID from JSON map
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-          DEFAULT_CHANNEL_ID="${{ secrets.SLACK_CHANNEL_ID }}"
+          DEFAULT_CHANNEL_ID="${{ secrets.DEFAULT_CHANNEL_ID }}"
           
           # Determine Slack message and notification channel based on event type and user existence
           if [ -n "$SLACK_USER_ID" ] && [ "$SLACK_USER_ID" != "null" ]; then
@@ -81,7 +81,7 @@ jobs:
               TARGET_CHANNEL_ID="$SLACK_USER_ID"
               SECONDARY_MESSAGE=":no_entry: Failed GitHub Actions for push/merge by $GITHUB_USER"
               
-              echo "SECONDARY_CHANNEL_ID=${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}" >> $GITHUB_ENV
+              echo "SECONDARY_CHANNEL_ID=${{ secrets.SECONDARY_CHANNEL_ID }}" >> $GITHUB_ENV
               echo "SECONDARY_MESSAGE=$SECONDARY_MESSAGE" >> $GITHUB_ENV
             fi
 
