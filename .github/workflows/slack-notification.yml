@@ -37,7 +37,7 @@ on:
         required: true
       SLACK_CHANNEL_ID:
         required: true
-      ENGG_TEAM_SLACK_CHANNEL:
+      SECONDARY_CHANNEL_ID:
         required: true
 
 jobs:
