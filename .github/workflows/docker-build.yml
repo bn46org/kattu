@@ -67,7 +67,7 @@ on:
       #   required: true
       GPG_USER_MAP_PASSPHRASE:
         required: true
-      ENGG_TEAM_SLACK_CHANNEL:
+      SECONDARY_CHANNEL_ID:
         required: true
 jobs:
   build-dockers:
