@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+      SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       SECONDARY_CHANNEL_ID: ${{ secrets.ENGG_TEAM_SLACK_CHANNEL }}
     steps:
