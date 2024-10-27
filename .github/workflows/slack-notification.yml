@@ -37,6 +37,8 @@ on:
         required: true
       SLACK_CHANNEL_ID:
         required: true
+      engg_team_slack_channel:
+        required: true
 
 jobs:
   notify:
@@ -45,6 +47,7 @@ jobs:
       GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SECONDARY_CHANNEL_ID: ${{ secrets.engg_team_slack_channel }}
     steps:
       - name: Install GPG
         run: |
@@ -55,41 +58,57 @@ jobs:
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46org/kattu/develop/.github/keys/user_map.json.gpg
           gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
-  
       - name: Determine Slack Message and Get Slack User ID
         id: slack_message_id
         run: |
           SLACK_USERS_MAP=$(cat user_map.json)
-      
           GITHUB_USER="${{ inputs.GITHUB_USER }}"
-      
+          EVENT_TYPE="${{ github.event_name }}"
+          
+          # Fetch Slack user ID from JSON map
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-      
-          if [ -z "$SLACK_USER_ID" ] || [ "$SLACK_USER_ID" == "null" ]; then
-            SLACK_USER_ID="${{ secrets.SLACK_CHANNEL_ID }}"
-            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
-            #SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
-          else
-            SLACK_MESSAGE=":no_entry: Failed GitHub Actions"
-            #SLACK_MESSAGE_CONTENT="*Repository*: <${{ inputs.REPO_URL }}>\n\n*Commit ID*: <${{ inputs.COMMIT_URL }}>\n\n*PR URL*: <${{ inputs.PR_URL }}>\n\n*Action*: ${{ inputs.ACTION }}\n\n*Job URL*: <${{ inputs.JOB_URL }}>\n\n*Message URL*: <${{ inputs.MESSAGE_URL }}>"
-          fi
-      
-          echo "SLACK_USER_ID=$SLACK_USER_ID" >> $GITHUB_ENV
-          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
-          #echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
+          DEFAULT_CHANNEL_ID="${{ secrets.SLACK_CHANNEL_ID }}"
+          
+          # Determine Slack message and notification channel based on event type and user existence
+          if [ -n "$SLACK_USER_ID" ] && [ "$SLACK_USER_ID" != "null" ]; then
+            if [ "$EVENT_TYPE" == "pull_request" ]; then
+              # PR Event: Notify only specific Slack user
+              TARGET_CHANNEL_ID="$SLACK_USER_ID"
+              SLACK_MESSAGE=":no_entry: Failed GitHub Actions for PR by $GITHUB_USER"
 
-      - name: Notify Slack
+            elif [ "$EVENT_TYPE" == "push" ] || ([ "$EVENT_TYPE" == "pull_request" ] && [ "${{ github.event.action }}" == "closed" ] && [ "${{ github.event.pull_request.merged }}" == "true" ]); then
+              # Push or Merge Event: Notify both specific Slack user and engineering team
+              TARGET_CHANNEL_ID="$SLACK_USER_ID"
+              SECONDARY_MESSAGE=":no_entry: Failed GitHub Actions for push/merge by $GITHUB_USER"
+              
+              echo "SECONDARY_CHANNEL_ID=${{ secrets.engg_team_slack_channel }}" >> $GITHUB_ENV
+              echo "SECONDARY_MESSAGE=$SECONDARY_MESSAGE" >> $GITHUB_ENV
+            fi
+
+          else
+            # Fallback if user not found in map
+            TARGET_CHANNEL_ID="$DEFAULT_CHANNEL_ID"
+            SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
+          fi
+
+          # Construct Slack message content
+          SLACK_MESSAGE_CONTENT="${SLACK_MESSAGE}"$'\n'"*PR URL*: ${{ inputs.PR_URL }}"$'\n'"*Repository*: ${{ inputs.REPO }}"$'\n'"*Workflow*: ${{ inputs.WORKFLOW }}"$'\n'"*Commit ID*: ${{ inputs.COMMIT }}"$'\n'"*Action*: ${{ inputs.ACTION }}"$'\n'"*Job URL*: ${{ inputs.JOB_URL }}"$'\n'"*Message*: ${{ inputs.MESSAGE }}"
+          echo "TARGET_CHANNEL_ID=$TARGET_CHANNEL_ID" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
+
+      - name: Notify Slack (Primary)
         uses: slackapi/slack-github-action@v1.27.0
         with:
-          channel-id: ${{ env.SLACK_USER_ID }}
-          slack-message: |
-            ${{ env.SLACK_MESSAGE }}
-            *PR_URL*: ${{ inputs.PR_URL }}
-            *Repository*: ${{ inputs.REPO }}
-            *Workflow*: ${{ inputs.WORKFLOW }}
-            *Commit ID*: ${{ inputs.COMMIT }}
-            *Action*: ${{ inputs.ACTION }}
-            *Job*: ${{ inputs.JOB_URL }}
-            *Message*: ${{ inputs.MESSAGE }}      
+          channel-id: ${{ env.TARGET_CHANNEL_ID }}
+          slack-message: ${{ env.SLACK_MESSAGE_CONTENT }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Slack (Secondary - Engineering Team) # Only for push and merge events
+        if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: ${{ env.SECONDARY_CHANNEL_ID }}
+          slack-message: ${{ env.SECONDARY_MESSAGE }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  
