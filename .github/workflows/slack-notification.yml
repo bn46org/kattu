@@ -91,16 +91,22 @@ jobs:
             SLACK_MESSAGE=":warning: *GitHub user $GITHUB_USER not mapped in Slack. Using fallback channel.*"
           fi
 
-          # Construct Slack message content
-          SLACK_MESSAGE_CONTENT="${SLACK_MESSAGE}"$'\n'"*PR URL*: ${{ inputs.PR_URL }}"$'\n'"*Repository*: ${{ inputs.REPO }}"$'\n'"*Workflow*: ${{ inputs.WORKFLOW }}"$'\n'"*Commit ID*: ${{ inputs.COMMIT }}"$'\n'"*Action*: ${{ inputs.ACTION }}"$'\n'"*Job URL*: ${{ inputs.JOB_URL }}"$'\n'"*Message*: ${{ inputs.MESSAGE }}"
           echo "TARGET_CHANNEL_ID=$TARGET_CHANNEL_ID" >> $GITHUB_ENV
-          echo "SLACK_MESSAGE_CONTENT=$SLACK_MESSAGE_CONTENT" >> $GITHUB_ENV
+          echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
 
       - name: Notify Slack (Primary)
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ env.TARGET_CHANNEL_ID }}
-          slack-message: ${{ env.SLACK_MESSAGE_CONTENT }}
+          slack-message: |
+            ${{ env.SLACK_MESSAGE }}
+            *PR URL*: ${{ inputs.PR_URL }}
+            *Repository*: ${{ inputs.REPO }}
+            *Workflow*: ${{ inputs.WORKFLOW }}
+            *Commit ID*: ${{ inputs.COMMIT }}
+            *Action*: ${{ inputs.ACTION }}
+            *Job URL*: ${{ inputs.JOB_URL }}
+            *Message*: ${{ inputs.MESSAGE }}          
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -109,6 +115,14 @@ jobs:
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ env.SECONDARY_CHANNEL_ID }}
-          slack-message: ${{ env.SECONDARY_MESSAGE }}
+          slack-message: |
+            ${{ env.SECONDARY_MESSAGE }}
+            *PR URL*: ${{ inputs.PR_URL }}
+            *Repository*: ${{ inputs.REPO }}
+            *Workflow*: ${{ inputs.WORKFLOW }}
+            *Commit ID*: ${{ inputs.COMMIT }}
+            *Action*: ${{ inputs.ACTION }}
+            *Job URL*: ${{ inputs.JOB_URL }}
+            *Message*: ${{ inputs.MESSAGE }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  
