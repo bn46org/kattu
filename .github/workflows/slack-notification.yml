@@ -30,24 +30,24 @@ on:
       MESSAGE:
         required: true
         type: string
-    secrets:
-      SLACK_BOT_TOKEN:
-        required: true
-      GPG_USER_MAP_PASSPHRASE:
-        required: true
-      DEFAULT_CHANNEL_ID:
-        required: true
-      SECONDARY_CHANNEL_ID:
-        required: true
+    # secrets:
+    #   SLACK_BOT_TOKEN:
+    #     required: true
+    #   GPG_USER_MAP_PASSPHRASE:
+    #     required: true
+    #   DEFAULT_CHANNEL_ID:
+    #     required: true
+    #   SECONDARY_CHANNEL_ID:
+    #     required: true
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    env:
-      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
+    # env:
+    #   GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+    #   DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+    #   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    #   SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
     steps:
       - name: Install GPG
         run: |
