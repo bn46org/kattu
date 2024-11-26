@@ -21,37 +21,7 @@ on:
         required: false
         type: boolean
         default: false
-      BASE_IMAGE_BUILD:
-        required: false
-        type: boolean
-        default: false
-      GITHUB_USER:
-        required: true
-        type: string
-      PR_URL:
-        required: true
-        type: string
-      # PR_TITLE:
-      #   required: true
-      #   type: string
-      WORKFLOW:
-        required: true
-        type: string
-      ACTION:
-        required: true
-        type: string
-      COMMIT:
-        required: true
-        type: string
-      REPO:
-        required: true
-        type: string
-      JOB_URL:
-        required: true
-        type: string
-      MESSAGE:
-        required: true
-        type: string
+
     secrets:
       RELEASE_DOCKER_HUB:
         required: true
@@ -59,18 +29,15 @@ on:
         required: true
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
-    #   SLACK_BOT_TOKEN:
-    #     required: true
-    #   DEFAULT_CHANNEL_ID:
-    #     required: true
-    #   # SLACK_CHANNEL_ID:  # Use the general channel ID secret here
-    #   #   required: true
-    #   # SLACK_USERS_MAP:
-    #   #   required: true
-    #   GPG_USER_MAP_PASSPHRASE:
-    #     required: true
-    #   SECONDARY_CHANNEL_ID:
-    #     required: true
+      SLACK_BOT_TOKEN:
+        required: false
+      DEFAULT_CHANNEL_ID:
+        required: false
+      GPG_USER_MAP_PASSPHRASE:
+        required: false
+      SECONDARY_CHANNEL_ID:
+        required: false
+
 jobs:
   build-dockers:
     runs-on: ubuntu-latest
@@ -78,10 +45,15 @@ jobs:
       NAMESPACE: ${{ secrets.DEV_NAMESPACE_DOCKER_HUB }}
       SERVICE_LOCATION: ${{ inputs.SERVICE_LOCATION }}
       SERVICE_NAME: ${{ inputs.SERVICE_NAME }}
-      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
+      # GITHUB_USER: ${{ github.actor }}
+      # WORKFLOW: ${{ github.workflow }}
+      # ACTION: ${{ github.event.action || 'N/A' }}
+      # PR_URL: "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+      # COMMIT: "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+      # REPO: ${{ github.repository }}
+      # JOB_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      # MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -123,53 +95,10 @@ jobs:
       - name: Get current date
         run: echo "BUILD_TIME=$(date +'%Y-%m-%d-%H-%M-%S')"  >> $GITHUB_ENV
 
-      - name: Check Dockerfile for 'mosip' user definition
+      - name: Build check for Docker label
         run: |
           cd ${{ inputs.SERVICE_LOCATION }}
-          DOCKERFILES=$(git ls-files | grep -w "Dockerfile")
-
-          chk_layer=(
-            "ARG\s+container_user=mosip"
-            "ARG\s+container_user_group=mosip"
-            "ARG\s+container_user_uid=1001"
-            "ARG\s+container_user_gid=1001"
-            "ENV\s+container_user=${container_user}
-            "ENV\s+container_user_group=\\\${container_user_group}
-            "ENV\s+container_user_uid=\\\${container_user_uid}
-            "ENV\s+container_user_gid=\\\${container_user_gid}
-            "WORKDIR\s+/home/\\\${container_user}"
-            "chown\s+-R\s+\\\${container_user}:\\\${container_user}\s+/home/\\\${container_user}"
-            "USER\s+\\\${container_user_uid}:\\\${container_user_gid}"
-          )
-
-          for FILE in $DOCKERFILES; do
-            for layer in "${chk_layer[@]}"; do
-              layer_count=$(grep -Ev '^$' "$FILE" | grep -Ec "$layer" || true)
-          
-              if [[ $layer_count -ne 1 ]]; then
-                dlayer=$(echo $layer | sed -E 's/\\s\+/ /g' | sed -E 's/\\//g')
-                echo "Docker layer: \"$dlayer\" not found in $FILE; EXITING"
-                exit 1
-              fi
-            done
-          done
-        continue-on-error: true  
-        if: ${{ inputs.BASE_IMAGE_BUILD == false }}
-
-      - name: Build check for Docker datetime & git commit labels
-        run: |
-          cd ${{ inputs.SERVICE_LOCATION }}
-           chk_layer=( "ARG\\s+SOURCE"
-                       "ARG\\s+COMMIT_HASH"
-                       "ARG\\s+COMMIT_ID"
-                       "ARG\\s+BUILD_TIME"
-                       "LABEL\\s+source=\\\${SOURCE}"
-                       "LABEL\\s+commit_hash=\\\${COMMIT_HASH}"
-                       "LABEL\\s+commit_id=\\\${COMMIT_ID}" 
-                       "LABEL\\s+build_time=\\\${BUILD_TIME}"
-          )
-          
-          for layer in "${chk_layer[@]}"; do
+          for layer in  ARG\\s+SOURCE ARG\\s+COMMIT_HASH ARG\\s+COMMIT_ID ARG\\s+BUILD_TIME LABEL\\s+source=\\$\\{SOURCE\\} LABEL\\s+commit_hash=\\$\\{COMMIT_HASH\\} LABEL\\s+commit_id=\\$\\{COMMIT_ID\\} LABEL\\s+build_time=\\$\\{BUILD_TIME\\}; do
             layer_count=$( grep -Ev '^$' Dockerfile | grep -Ec "$layer" || true);
           
             if [[ $layer_count -ne 1 ]]; then
@@ -178,17 +107,11 @@ jobs:
               exit 1;
             fi
           done
-        continue-on-error: true  
-        if: ${{ inputs.BASE_IMAGE_BUILD == false }}
 
       - name: Build image
         run: |
-          if [[ ${{ inputs.BASE_IMAGE_BUILD }} == false ]]; then
-            DOCKER_LABEL=$( echo "--build-arg COMMIT_HASH=$(git rev-parse HEAD) --build-arg COMMIT_ID=$(git rev-parse --short HEAD) --build-arg BUILD_TIME=$BUILD_TIME" )
-          fi
-          echo "DOCKER_LABEL = $DOCKER_LABEL "
           cd ${{ inputs.SERVICE_LOCATION }}
-          docker build . --build-arg SOURCE=mosip --file Dockerfile $DOCKER_LABEL --tag ${{ env.SERVICE_NAME }}
+          docker build . --build-arg SOURCE=mosip --build-arg COMMIT_HASH=$(git rev-parse HEAD) --build-arg COMMIT_ID=$(git rev-parse --short HEAD) --build-arg BUILD_TIME=$BUILD_TIME --file Dockerfile --tag ${{ env.SERVICE_NAME }}
 
       - name: Log into registry
         if: "${{ github.event_name != 'pull_request' }}"
@@ -211,38 +134,27 @@ jobs:
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-      # - name: Notify Slack
-      #   if: failure()
-      #   uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
-      #   with:
-      #     GITHUB_USER: ${{ inputs.GITHUB_USER }}
-      #     PR_TITLE: ${{ inputs.PR_TITLE }}
-      #     PR_URL: ${{ inputs.PR_URL }}
-      #     REPOSITORY: ${{ inputs.REPOSITORY }}
-      #     ACTION: ${{ inputs.ACTION }}
-      #   env:
-      #     GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      #     SLACK_CHANNEL_ID: ${{ secrets.GENERAL_CHANNEL_ID }}
+
   notify-slack:
     needs: build-dockers
     if: failure()
     secrets:
-        GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-        SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID}}
-    uses: bn46org/kattu/.github/workflows/slack-notification.yml@develop
+      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
+    uses: bn46org/kattu/.github/workflows/slack-notification.yml@testing
     with:
-      GITHUB_USER: ${{ inputs.GITHUB_USER }}
-      #PR_TITLE: ${{ inputs.PR_TITLE }}
-      WORKFLOW: ${{ INPUTS.WORKFLOW }}
-      PR_URL: ${{ inputs.PR_URL }}
-      ACTION: ${{ inputs.ACTION }}
-      COMMIT: ${{ inputs.COMMIT }}
-      REPO: ${{ inputs.REPO }}
-      JOB_URL: ${{ inputs.JOB_URL }}
-      MESSAGE: ${{ inputs.MESSAGE }}
- 
-
-
+      GITHUB_USER: ${{ github.actor }}
+      WORKFLOW: ${{ github.workflow }}
+      PR_URL: "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+      COMMIT: "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+      REPO: ${{ github.repository }}
+      JOB_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
+      ACTION: ${{ github.event.action || 'N/A' }}
+      # GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+      # SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      # DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+      # SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
+    # secrets: inherit
