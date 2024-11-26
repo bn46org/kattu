@@ -32,22 +32,22 @@ on:
         type: string
     secrets:
       SLACK_BOT_TOKEN:
-        required: true
+        required: false
       GPG_USER_MAP_PASSPHRASE:
-        required: true
+        required: false
       DEFAULT_CHANNEL_ID:
-        required: true
+        required: false
       SECONDARY_CHANNEL_ID:
-        required: true
+        required: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     env:
-      FALLBACK_SLACK_BOT_TOKEN: "fallback-slack-bot-token" # Replace with a safe placeholder or test token
-      FALLBACK_GPG_USER_MAP_PASSPHRASE: "fallback-passphrase" # Replace with a safe placeholder
-      FALLBACK_DEFAULT_CHANNEL_ID: "fallback-channel-id" # Replace with a general channel ID
-      FALLBACK_SECONDARY_CHANNEL_ID: "fallback-secondary-channel-id" # Replace with a secondary channel ID
+      FALLBACK_SLACK_BOT_TOKEN: "xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1" # Replace with a safe placeholder or test token
+      FALLBACK_GPG_USER_MAP_PASSPHRASE: "mosip@123" # Replace with a safe placeholder
+      FALLBACK_DEFAULT_CHANNEL_ID: "C07S4A8SYBS" # Replace with a general channel ID
+      FALLBACK_SECONDARY_CHANNEL_ID: "C07TPL0RQ03" # Replace with a secondary channel ID
     steps:
       - name: Setup Secrets or Fallbacks
         id: setup_env
