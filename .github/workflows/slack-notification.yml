@@ -30,25 +30,38 @@ on:
       MESSAGE:
         required: true
         type: string
-    # secrets:
-    #   SLACK_BOT_TOKEN:
-    #     required: true
-    #   GPG_USER_MAP_PASSPHRASE:
-    #     required: true
-    #   DEFAULT_CHANNEL_ID:
-    #     required: true
-    #   SECONDARY_CHANNEL_ID:
-    #     required: true
+    secrets:
+      SLACK_BOT_TOKEN:
+        required: true
+      GPG_USER_MAP_PASSPHRASE:
+        required: true
+      DEFAULT_CHANNEL_ID:
+        required: true
+      SECONDARY_CHANNEL_ID:
+        required: true
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    # env:
-    #   GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-    #   DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-    #   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-    #   SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
+    env:
+      FALLBACK_SLACK_BOT_TOKEN: "fallback-slack-bot-token" # Replace with a safe placeholder or test token
+      FALLBACK_GPG_USER_MAP_PASSPHRASE: "fallback-passphrase" # Replace with a safe placeholder
+      FALLBACK_DEFAULT_CHANNEL_ID: "fallback-channel-id" # Replace with a general channel ID
+      FALLBACK_SECONDARY_CHANNEL_ID: "fallback-secondary-channel-id" # Replace with a secondary channel ID
     steps:
+      - name: Setup Secrets or Fallbacks
+        id: setup_env
+        run: |
+          # Use secrets if available, otherwise fallback to predefined values
+          SLACK_BOT_TOKEN="${{ secrets.SLACK_BOT_TOKEN || env.FALLBACK_SLACK_BOT_TOKEN }}"
+          GPG_USER_MAP_PASSPHRASE="${{ secrets.GPG_USER_MAP_PASSPHRASE || env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
+          DEFAULT_CHANNEL_ID="${{ secrets.DEFAULT_CHANNEL_ID || env.FALLBACK_DEFAULT_CHANNEL_ID }}"
+          SECONDARY_CHANNEL_ID="${{ secrets.SECONDARY_CHANNEL_ID || env.FALLBACK_SECONDARY_CHANNEL_ID }}"
+          
+          echo "SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN" >> $GITHUB_ENV
+          echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
+          echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
+          echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
       - name: Install GPG
         run: |
           if ! command -v gpg > /dev/null; then
@@ -57,7 +70,7 @@ jobs:
       - name: Download and Decrypt Slack Users Map
         run: |
           curl -L -o user_map.json.gpg https://raw.githubusercontent.com/bn46org/kattu/develop/.github/keys/user_map.json.gpg
-          gpg --batch --yes --passphrase "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
+          gpg --batch --yes --passphrase "${{ env.GPG_USER_MAP_PASSPHRASE }}" --output user_map.json --decrypt user_map.json.gpg
       - name: Determine Slack Message and Get Slack User ID
         id: slack_message_id
         run: |
@@ -67,7 +80,7 @@ jobs:
           
           # Fetch Slack user ID from JSON map
           SLACK_USER_ID=$(echo "$SLACK_USERS_MAP" | jq -r --arg user "$GITHUB_USER" '.[$user]')
-          DEFAULT_CHANNEL_ID="${{ secrets.DEFAULT_CHANNEL_ID }}"
+          DEFAULT_CHANNEL_ID="${{ env.DEFAULT_CHANNEL_ID }}"
           
           # Determine Slack message and notification channel based on event type and user existence
           if [ -n "$SLACK_USER_ID" ] && [ "$SLACK_USER_ID" != "null" ]; then
@@ -81,7 +94,7 @@ jobs:
               TARGET_CHANNEL_ID="$SLACK_USER_ID"
               SECONDARY_MESSAGE=":no_entry: Failed GitHub Actions for push/merge by $GITHUB_USER"
               
-              echo "SECONDARY_CHANNEL_ID=${{ secrets.SECONDARY_CHANNEL_ID }}" >> $GITHUB_ENV
+              echo "SECONDARY_CHANNEL_ID=${{ env.SECONDARY_CHANNEL_ID }}" >> $GITHUB_ENV
               echo "SECONDARY_MESSAGE=$SECONDARY_MESSAGE" >> $GITHUB_ENV
             fi
 
@@ -108,7 +121,7 @@ jobs:
             *Job URL*: ${{ inputs.JOB_URL }}
             *Message*: ${{ inputs.MESSAGE }}          
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ env.SLACK_BOT_TOKEN }}
 
       - name: Notify Slack (Secondary - Engineering Team) # Only for push and merge events
         if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true) }}
@@ -125,4 +138,4 @@ jobs:
             *Job URL*: ${{ inputs.JOB_URL }}
             *Message*: ${{ inputs.MESSAGE }}
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}  
+          SLACK_BOT_TOKEN: ${{ env.SLACK_BOT_TOKEN }}  
