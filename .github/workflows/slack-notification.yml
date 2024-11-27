@@ -53,6 +53,11 @@ jobs:
       - name: Setup Secrets or Fallbacks
         id: setup_env
         run: |
+          # Mask the values
+          echo "::add-mask::$SLACK_BOT_TOKEN"
+          echo "::add-mask::$GPG_USER_MAP_PASSPHRASE"
+          echo "::add-mask::$DEFAULT_CHANNEL_ID"
+          echo "::add-mask::$SECONDARY_CHANNEL_ID"
           # Use secrets if available, otherwise fallback to predefined values
           SLACK_BOT_TOKEN="${{ secrets.SLACK_BOT_TOKEN || env.FALLBACK_SLACK_BOT_TOKEN }}"
           GPG_USER_MAP_PASSPHRASE="${{ secrets.GPG_USER_MAP_PASSPHRASE || env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
@@ -63,12 +68,12 @@ jobs:
           echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
           echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
           echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
-      - name: Mask Environment Variables
-        run: |
-          echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
-          echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
-          echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
-          echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
+      # - name: Mask Environment Variables
+      #   run: |
+      #     echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
+      #     echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
+      #     echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
+      #     echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
  
       - name: Install GPG
         run: |
