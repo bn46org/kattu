@@ -50,6 +50,13 @@ jobs:
     #   FALLBACK_DEFAULT_CHANNEL_ID: "C07S4A8SYBS" # Replace with a general channel ID
     #   FALLBACK_SECONDARY_CHANNEL_ID: "C07TPL0RQ03" # Replace with a secondary channel ID
     steps:
+      - name: Check out Reusable Workflow Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Secrets or Fallbacks
+        run: |
+          bash ./default.sh
+
       # - name: Setup Secrets or Fallbacks
       #   id: setup_env
       #   run: |
@@ -67,50 +74,50 @@ jobs:
       #     echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
       #     echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
       #     echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
-      # # - name: Mask Environment Variables
-      # #   run: |
-      # #     echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
-      # #     echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
-      # #     echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
-      # #     echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
-      - name: Setup Secrets and Mask Fallbacks
-        run: |
-          set +x  # Disable command echoing for sensitive data
-          # Safely set the fallback values for secrets without logging them
-          if [ -z "${{ secrets.SLACK_BOT_TOKEN }}" ]; then
-            echo "::add-mask::xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1" >/dev/null 2>&1
-            export SLACK_BOT_TOKEN="xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1"
-          else
-            export SLACK_BOT_TOKEN="${{ secrets.SLACK_BOT_TOKEN }}"
-          fi
+      # - name: Mask Environment Variables
+      #   run: |
+      #     echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
+      #     echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
+      #     echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
+      #     echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
+      # - name: Setup Secrets and Mask Fallbacks
+      #   run: |
+      #     set +x  # Disable command echoing for sensitive data
+      #     # Safely set the fallback values for secrets without logging them
+      #     if [ -z "${{ secrets.SLACK_BOT_TOKEN }}" ]; then
+      #       echo "::add-mask::xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1" >/dev/null 2>&1
+      #       export SLACK_BOT_TOKEN="xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1"
+      #     else
+      #       export SLACK_BOT_TOKEN="${{ secrets.SLACK_BOT_TOKEN }}"
+      #     fi
       
-          if [ -z "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" ]; then
-            echo "::add-mask::mosip@123" >/dev/null 2>&1
-            export GPG_USER_MAP_PASSPHRASE="mosip@123"
-          else
-            export GPG_USER_MAP_PASSPHRASE="${{ secrets.GPG_USER_MAP_PASSPHRASE }}"
-          fi
+      #     if [ -z "${{ secrets.GPG_USER_MAP_PASSPHRASE }}" ]; then
+      #       echo "::add-mask::mosip@123" >/dev/null 2>&1
+      #       export GPG_USER_MAP_PASSPHRASE="mosip@123"
+      #     else
+      #       export GPG_USER_MAP_PASSPHRASE="${{ secrets.GPG_USER_MAP_PASSPHRASE }}"
+      #     fi
       
-          if [ -z "${{ secrets.DEFAULT_CHANNEL_ID }}" ]; then
-            echo "::add-mask::C07S4A8SYBS" >/dev/null 2>&1
-            export DEFAULT_CHANNEL_ID="C07S4A8SYBS"
-          else
-            export DEFAULT_CHANNEL_ID="${{ secrets.DEFAULT_CHANNEL_ID }}"
-          fi
+      #     if [ -z "${{ secrets.DEFAULT_CHANNEL_ID }}" ]; then
+      #       echo "::add-mask::C07S4A8SYBS" >/dev/null 2>&1
+      #       export DEFAULT_CHANNEL_ID="C07S4A8SYBS"
+      #     else
+      #       export DEFAULT_CHANNEL_ID="${{ secrets.DEFAULT_CHANNEL_ID }}"
+      #     fi
       
-          if [ -z "${{ secrets.SECONDARY_CHANNEL_ID }}" ]; then
-            echo "::add-mask::C07TPL0RQ03" >/dev/null 2>&1
-            export SECONDARY_CHANNEL_ID="C07TPL0RQ03"
-          else
-            export SECONDARY_CHANNEL_ID="${{ secrets.SECONDARY_CHANNEL_ID }}"
-          fi
+      #     if [ -z "${{ secrets.SECONDARY_CHANNEL_ID }}" ]; then
+      #       echo "::add-mask::C07TPL0RQ03" >/dev/null 2>&1
+      #       export SECONDARY_CHANNEL_ID="C07TPL0RQ03"
+      #     else
+      #       export SECONDARY_CHANNEL_ID="${{ secrets.SECONDARY_CHANNEL_ID }}"
+      #     fi
       
-          # Save to GITHUB_ENV for further steps
-          echo "SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN" >> $GITHUB_ENV
-          echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
-          echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
-          echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
-          set -x  # Re-enable command echoing
+      #     # Save to GITHUB_ENV for further steps
+      #     echo "SLACK_BOT_TOKEN=$SLACK_BOT_TOKEN" >> $GITHUB_ENV
+      #     echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
+      #     echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
+      #     echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
+      #     set -x  # Re-enable command echoing
        
       - name: Install GPG
         run: |
