@@ -63,13 +63,12 @@ jobs:
           echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
           echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
       - name: Mask Environment Variables
-        env:
-          ACTIONS_STEP_DEBUG: false
         run: |
           echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
           echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
           echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
           echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
+          no_log: true
  
       - name: Install GPG
         run: |
