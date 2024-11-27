@@ -57,7 +57,7 @@ jobs:
         run: chmod +x default.sh
       
       - name: Run Setup Script
-        run: default.sh
+        run: bash default.sh
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
