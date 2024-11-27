@@ -44,6 +44,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     env:
+      ACTIONS_RUNNER_DEBUG: false
       FALLBACK_SLACK_BOT_TOKEN: "xoxb-7853523366288-7836754982820-myTfqq6SkcCHsTtnPZ5hNdc1" # Replace with a safe placeholder or test token
       FALLBACK_GPG_USER_MAP_PASSPHRASE: "mosip@123" # Replace with a safe placeholder
       FALLBACK_DEFAULT_CHANNEL_ID: "C07S4A8SYBS" # Replace with a general channel ID
@@ -68,7 +69,6 @@ jobs:
           echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
           echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
           echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"
-          no_log: true
  
       - name: Install GPG
         run: |
