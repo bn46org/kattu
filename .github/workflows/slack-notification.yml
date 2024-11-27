@@ -110,10 +110,6 @@ jobs:
 
       - name: Mask Sensitive Information
         run: |
-          echo "::add-mask::${{ secrets.SLACK_BOT_TOKEN }}"
-          echo "::add-mask::${{ secrets.GPG_USER_MAP_PASSPHRASE }}"
-          echo "::add-mask::${{ secrets.DEFAULT_CHANNEL_ID }}"
-          echo "::add-mask::${{ secrets.SECONDARY_CHANNEL_ID }}"
           echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
           echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
           echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
