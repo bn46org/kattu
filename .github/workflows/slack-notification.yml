@@ -62,6 +62,7 @@ jobs:
           echo "GPG_USER_MAP_PASSPHRASE=$GPG_USER_MAP_PASSPHRASE" >> $GITHUB_ENV
           echo "DEFAULT_CHANNEL_ID=$DEFAULT_CHANNEL_ID" >> $GITHUB_ENV
           echo "SECONDARY_CHANNEL_ID=$SECONDARY_CHANNEL_ID" >> $GITHUB_ENV
+
       - name: Install GPG
         run: |
           if ! command -v gpg > /dev/null; then
@@ -106,6 +107,17 @@ jobs:
 
           echo "TARGET_CHANNEL_ID=$TARGET_CHANNEL_ID" >> $GITHUB_ENV
           echo "SLACK_MESSAGE=$SLACK_MESSAGE" >> $GITHUB_ENV
+
+      - name: Mask Sensitive Information
+        run: |
+          echo "::add-mask::${{ secrets.SLACK_BOT_TOKEN }}"
+          echo "::add-mask::${{ secrets.GPG_USER_MAP_PASSPHRASE }}"
+          echo "::add-mask::${{ secrets.DEFAULT_CHANNEL_ID }}"
+          echo "::add-mask::${{ secrets.SECONDARY_CHANNEL_ID }}"
+          echo "::add-mask::${{ env.FALLBACK_SLACK_BOT_TOKEN }}"
+          echo "::add-mask::${{ env.FALLBACK_GPG_USER_MAP_PASSPHRASE }}"
+          echo "::add-mask::${{ env.FALLBACK_DEFAULT_CHANNEL_ID }}"
+          echo "::add-mask::${{ env.FALLBACK_SECONDARY_CHANNEL_ID }}"  
 
       - name: Notify Slack (Primary)
         uses: slackapi/slack-github-action@v1.27.0
