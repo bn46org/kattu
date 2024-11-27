@@ -50,12 +50,20 @@ jobs:
     #   FALLBACK_DEFAULT_CHANNEL_ID: "C07S4A8SYBS" # Replace with a general channel ID
     #   FALLBACK_SECONDARY_CHANNEL_ID: "C07TPL0RQ03" # Replace with a secondary channel ID
     steps:
-      - name: Check out Reusable Workflow Repository
-        uses: actions/checkout@v3
+      - name: Download Setup Script
+        run: curl -L -o default.sh https://raw.githubusercontent.com/bn46org/kattu/refs/heads/testing/default.sh
+      
+      - name: Make Script Executable
+        run: chmod +x default.sh
+      
+      - name: Run Setup Script
+        run: default.sh
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
+          DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
+          SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
 
-      - name: Setup Secrets or Fallbacks
-        run: |
-          bash ./default.sh
 
       # - name: Setup Secrets or Fallbacks
       #   id: setup_env
