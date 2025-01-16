@@ -29,13 +29,7 @@ on:
         required: true
       DEV_NAMESPACE_DOCKER_HUB:
         required: true
-      SLACK_BOT_TOKEN:
-        required: true
-      DEFAULT_CHANNEL_ID:
-        required: true
-      GPG_USER_MAP_PASSPHRASE:
-        required: true
-      SECONDARY_CHANNEL_ID:
+      SLACK_WEBHOOK_URL:
         required: true
 
 jobs:
@@ -45,14 +39,6 @@ jobs:
       NAMESPACE: ${{ secrets.DEV_NAMESPACE_DOCKER_HUB }}
       SERVICE_LOCATION: ${{ inputs.SERVICE_LOCATION }}
       SERVICE_NAME: ${{ inputs.SERVICE_NAME }}
-      # GITHUB_USER: ${{ github.actor }}
-      # WORKFLOW: ${{ github.workflow }}
-      # ACTION: ${{ github.event.action || 'N/A' }}
-      # PR_URL: "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
-      # COMMIT: "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-      # REPO: ${{ github.repository }}
-      # JOB_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-      # MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
 
     steps:
       - uses: actions/checkout@v3
@@ -84,7 +70,7 @@ jobs:
             exit 1
           else
             echo "Dockerfile check passed: No forbidden organizations or tags found."
-          fi    
+          fi      
 
       - name: Get version info from pom
         if: ${{ contains(inputs.NPM_BUILD, 'false') && ( inputs.BUILD_ARTIFACT != 'false' )  && ( inputs.ONLY_DOCKER == false ) }}
@@ -152,26 +138,10 @@ jobs:
           docker tag $SERVICE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
-  notify-slack:
-    needs: build-dockers
-    if: failure()
-    secrets:
-      GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-      SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
-    uses: bn46org/kattu/.github/workflows/slack-notification.yml@master-java21
-    with:
-      GITHUB_USER: ${{ github.actor }}
-      WORKFLOW: ${{ github.workflow }}
-      PR_URL: "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
-      COMMIT: "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-      REPO: ${{ github.repository }}
-      JOB_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-      MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
-      ACTION: ${{ github.event.action || 'N/A' }}
-      # GPG_USER_MAP_PASSPHRASE: ${{ secrets.GPG_USER_MAP_PASSPHRASE }}
-      # SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      # DEFAULT_CHANNEL_ID: ${{ secrets.DEFAULT_CHANNEL_ID }}
-      # SECONDARY_CHANNEL_ID: ${{ secrets.SECONDARY_CHANNEL_ID }}
-    # secrets: inherit
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,commit,workflow,job # selectable (default: repo,message)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+        if: "${{ github.event_name != 'pull_request' && failure() }}" # Pick up events even if the job fails or is canceled.
